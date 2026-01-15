@@ -334,6 +334,60 @@
     .avatar{ font-size:40px; margin-bottom:8px; }
     .initials{ font-weight:900; letter-spacing:.6px; font-size:18px; }
     .sub{ color: var(--muted); font-size:12px; margin-top:4px; }
+  
+    /* Card container */
+    .card{
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    /* Help panel */
+    #helpPanel{
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 14px;
+      display:flex;
+      justify-content:center;
+      z-index: 90;
+      pointer-events:none;
+    }
+    .helpCard{
+      pointer-events:auto;
+      width:min(720px, calc(100% - 36px));
+      background: rgba(17,27,46,.98);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      padding:12px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+    }
+    .helpTitle{ font-weight:900; letter-spacing:.2px; margin-bottom:8px; text-align:center; }
+    .helpBtns{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:center;
+    }
+    .helpText{
+      margin-top:10px;
+      color: var(--muted);
+      font-size:14px;
+      line-height:1.4;
+      text-align:center;
+    }
+	.helpBtn{
+	  min-width: 48px !important;
+	  width: 48px;
+	  padding: 12px 0;
+	  font-size: 20px;
+	  border-radius: 50%;
+	  background: rgba(255,255,255,.06);
+	  border: 1px solid rgba(255,255,255,.12);
+	}
+	.helpBtn:hover{
+	  background: rgba(255,255,255,.12);
+	}
+
+
   </style>
 </head>
 
@@ -360,10 +414,12 @@
         <div class="bigWord" id="wordBox">• • •</div>
 
         <div class="controls" id="primaryControls">
-          <button class="primary" id="btnSpeak">🔊 Listen</button>
-          <button id="btnShow">👀 Show</button>
-          <button class="next" id="btnNext">➡️ Next</button>
-        </div>
+		  <button class="primary" id="btnSpeak">🔊 Listen</button>
+		  <button id="btnShow">👀 Show</button>
+		  <button class="next" id="btnNext">➡️ Next</button>
+		  <button id="btnHelp" class="helpBtn">❓</button>
+		</div>
+
 
         <div class="controls" id="markRow" style="display:none; margin-top:14px;">
           <button class="good" id="btnUp">👍 I got it</button>
@@ -371,6 +427,19 @@
         </div>
       </section>
     </main>
+
+      <div id="helpPanel" style="display:none;">
+        <div class="helpCard">
+          <div class="helpTitle">Help</div>
+          <div class="helpBtns">
+            <button id="btnDef">📘 Definition</button>
+            <button id="btnEx">🗣 Example</button>
+            <button id="btnHelpClose">✖ Close</button>
+          </div>
+          <div class="helpText" id="helpText"></div>
+        </div>
+      </div>
+
 
     <div class="drawerBackdrop" id="drawerBackdrop">
       <div class="drawer" role="dialog" aria-modal="true" aria-label="Menu">
@@ -464,6 +533,260 @@
 
   </div>
 
+<script id="helpTSV" type="text/plain">
+Word	Definition	Sentence
+ abdomen	the part of the body that contains the stomach and intestines	The doctor pressed gently on the patient's abdomen.
+ aboard	on, onto, or within a vehicle	All passengers are welcome aboard the train.
+ accident	reasons or causes that are not planned by anyone	She hurt her knee in a small cycling accident.
+ anchor	a heavy device connected by a cable to a boat or ship that is dropped into the water to restrict motion	The captain ordered the crew to drop the anchor.
+ ancient	very old; from a long time ago	We visited the ruins of an ancient Roman city.
+ Antarctica	the continent surrounding the South Pole	Antarctica is covered by a very thick layer of ice.
+ anxious	afraid or nervous especially about what may happen	She was anxious about speaking in front of a large audience.
+ appreciate	to recognize the full value of	I truly appreciate all the help you have given me.
+ approximate	close to the actual, but not precisely accurate or exact	The approximate cost of the trip is one hundred dollars.
+ arrogant	having or revealing an exaggerated sense of one's own importance or abilities	His arrogant attitude made it difficult for him to make friends.
+ artificial	made or produced by human beings rather than occurring naturally	The cake was decorated with bright artificial flowers.
+ attempt	to make an effort to achieve or complete something difficult	The young climber made an attempt to reach the top of the hill.
+ aware	having knowledge or realization of	The scientist was aware of how the tiny organism could reproduce.
+ assessment	the evaluation or estimation of the nature, quality, or ability of someone or something	The students prepared for their final skills assessment.
+ associate	to connect something with something else in thought	I associate that smell with my grandmother's house.
+ athlete	a person who is proficient in sports and physical exercise	The athlete trained every day to prepare for the Olympics.
+ atmosphere	the whole mass of air that surrounds the Earth	The planet Mars has a thin and cold atmosphere.
+ authority	the power or right to give orders, make decisions, and enforce obedience	The teacher has the authority to assign homework and tests.
+ awkward	causing or feeling embarrassment or inconvenience	The silence in the room was long and very awkward.
+ beard	a growth of hair on the chin and lower cheeks of a man's face	My grandfather has a long white beard.
+ beneficial	favorable or advantageous; resulting in good	Eating vegetables is extremely beneficial for your health.
+ billboard	a large board that shows advertisements outdoors	We saw a huge billboard advertising the new movie.
+ black	having the very dark color of coal or the night sky	She always wears black clothes in the winter.
+ blend	to mix completely so that there are no longer separate parts	You must blend the flour and butter until smooth.
+ blocks	a solid piece of hard material with flat sides	The toddlers played happily stacking wooden blocks.
+ bloom	the state or time of being in blossom	The roses will bloom beautifully in the spring.
+ bookstore	a store in which books are the primary items for sale	I spent an hour browsing the shelves at the bookstore.
+ bracelet	an ornamental band or chain worn around the wrist	She received a silver bracelet as a birthday gift.
+ breezy	fresh, windy	It was a warm and breezy day perfect for sailing.
+ brick	a building or paving material made from baked clay	The house was built using red clay bricks.
+ bright	producing a lot of light	The sun was so bright we needed sunglasses.
+ bubble	a small amount of gas surrounded by another substance	The child laughed as the bubble floated away.
+ bungalow	a low, small house with only one storey	They plan to retire and live in a cozy seaside bungalow.
+ bury	to put in the ground and cover with earth	The dog tried to bury its bones in the garden.
+ busy	actively at work	The students were very busy studying for their final exams.
+ captain	the person in command of a ship or aircraft	The ship’s captain steered the vessel through the storm.
+ carpet	a floor covering made from thick woven fabric	We bought a new blue carpet for the living room.
+ cashier	a person handling payment in a store or bank	The cashier quickly scanned all the groceries.
+ cell	a single unit of animal or plant life	Scientists use microscopes to study the structure of a cell.
+ cereal	a grain used for food, typically eaten at breakfast	I eat a bowl of cereal with milk every morning.
+ Chancellor	the chief minister of state in some governments	The Chancellor gave a speech about new educational reforms.
+ Chicago	the capital city of Illinois	We plan to visit the tall buildings in the city of Chicago.
+ chilly	noticeably cold	The morning air felt quite chilly so I put on a jacket.
+ circuit	the complete path followed by an electric current	The electrician repaired the faulty circuit in the wall.
+ circular	shaped like a circle or part of a circle	The table in the dining room is perfectly circular.
+ clerk	a person employed to perform office work	The office clerk filed all the necessary documents.
+ climate	the usual weather conditions in a place	The desert has a hot and dry climate year-round.
+ comet	an object in space that travels around the sun	Astronomers tracked the bright comet as it passed by Earth.
+ conservation	the controlled use of natural resources to preserve or protect	The park’s mission is wildlife conservation and protection.
+ conquer	to overcome and take control of a place or people by force	The invading army was determined to conquer the entire territory.
+ corrosion	the process of gradually destroying a material, typically metal, by chemical reaction	The old car was covered in rust from years of corrosion.
+ crater	a hollow area shaped like the inside of a bowl	Astronauts landed near a large crater on the Moon.
+ credibility	the quality of being convincing or believable	The witness lost credibility after changing her story several times.
+ crucial	decisive or critical for success or failure	This final exam is crucial for passing the entire course.
+ crowd	a large number of people gathered together	A large crowd watched the parade go by.
+ curiosity	a strong desire to know or learn something	The cat’s curiosity led it to explore the inside of the box.
+ custom	a traditional and widely accepted way of behaving	It is a local custom to exchange gifts on New Year’s Eve.
+ decade	a period of ten years	The building was constructed over a decade ago.
+ decide	to come to a resolution in the mind	We need to decide where we will go on vacation this summer.
+ design	to plan and make a detailed drawing or plan	The architect will design the layout for the new museum.
+ develop	to grow or cause to grow	Scientists continue to develop new technologies every year.
+ dictation	writing down the words someone says	The teacher read a passage for the students’ weekly dictation.
+ dirty	covered or marked with an unclean substance	After playing outside, his hands were completely dirty.
+ disappearing	vanishing from sight	The sun was disappearing quickly below the horizon.
+ disguise	to give a different appearance to hide identity	The spy wore a clever disguise to enter the headquarters.
+ ecology	the branch of biology that studies organisms and their environment	Studying ecology helps us understand how forests grow.
+ elderly	old or aging	A kind neighbor often helps the elderly man with his groceries.
+ electricity	a form of energy from charged particles	The storm caused the neighborhood to lose electricity.
+ employer	a person or organization that employs people	Her new employer offers great benefits and flexible hours.
+ end	the final part of something	We stayed until the end of the concert to hear the last song.
+ evaporate	to turn from liquid into vapor	If you leave water in the sun, it will slowly evaporate.
+ event	something that happens, especially something important	The wedding was the biggest social event of the year.
+ expect	to regard something as likely to happen	I expect the mail will arrive this afternoon.
+ expensive	costing a lot of money	That designer handbag is too expensive for my budget.
+ extremely	to a very great degree	It was an extremely difficult puzzle to solve.
+ fascinate	to attract strong attention or interest	The history of ancient Egypt always fascinates me.
+ fertilization	the process of fertilizing plants or animals	The careful fertilization produced seeds with unique traits.
+ fiction	literature describing imaginary events and people	Most of the books on this shelf are fiction novels.
+ forbid	to refuse to allow something	The park regulations forbid walking on the protected grass.
+ foreground	the part of a view nearest to the observer	In the painting, a large tree dominates the foreground.
+ foreign	relating to a country or language other than one’s own	She is learning a new foreign language: Mandarin Chinese.
+ forever	for all time; perpetually	I promise to love you forever and always.
+ fragile	easily broken or damaged	Be careful with that box, it is very fragile.
+ frustrate	to prevent someone from accomplishing something	The repeated technical difficulties began to frustrate the team.
+ galaxy	a system of millions or billions of stars held together by gravity	Our solar system is part of the Milky Way galaxy.
+ gas	an air-like substance that expands freely	Nitrogen is the most common gas in Earth’s atmosphere.
+ generate	to produce or create	The windmills generate clean electricity for the town.
+ geranium	a plant with showy, colorful flowers	She planted a bright red geranium in the flowerpot.
+ glove	a covering for the hand	I need to wear a warm glove when I go out in the snow.
+ goods	merchandise or possessions	The factory produces many useful goods for export.
+ glacier	a slowly moving mass of ice	The hikers saw the massive blue glacier melting.
+ grass	short green plants covering the ground	The children played soccer on the grass.
+ hesitate	to pause before doing something	Do not hesitate to ask your teacher for help.
+ hope	a feeling of expectation and desire	We have great hope for sunny weather.
+ hostess	a woman who receives or entertains guests	The restaurant hostess greeted us warmly.
+ hotel	a place that provides accommodation for travelers	We booked a room at the beachfront hotel.
+ how	in what way or manner	Can you show me how to solve this problem?
+ huge	extremely large	There was a huge crowd at the concert.
+ idol	a person or thing greatly admired	The singer is her musical idol.
+ illness	a disease or period of sickness	He missed school because of an illness.
+ immense	extremely large in scale	The project required an immense amount of work.
+ impressionism	a style of painting that began in France in the 1860s	Monet was a founder of Impressionism.
+ incredible	impossible to believe; extraordinary	She performed an incredible gymnastics routine.
+ ingredients	foods or substances used to make a dish	I bought all the ingredients for the cake.
+ inhale	to breathe in	Remember to inhale deeply when you relax.
+ inquiry	an act of asking for information	The teacher started an inquiry.
+ insomnia	the inability to sleep	He suffers from chronic insomnia.
+ integrity	honesty and strong moral principles	A leader must have integrity.
+ jubilee	a special anniversary celebration	The town celebrated the Queen’s Jubilee.
+ juvenile	relating to young people	The youth center offers programs for juvenile athletes.
+ just	exactly; precisely	The bus arrived just on time.
+ kindness	being friendly and considerate	Kindness makes the world better.
+ lamps	devices that give light	We changed the lamps in the living room.
+ labyrinth	a complicated maze of paths	The children got lost in the labyrinth.
+ legendary	famous and well known	King Arthur is a legendary hero.
+ literacy	the ability to read and write	The program improved adult literacy.
+ lifeguard	a person who rescues swimmers	The lifeguard saved a child.
+ majestic	having impressive beauty	The majestic castle stood on the hill.
+ magma	molten rock beneath the Earth’s surface	The volcano is filled with hot magma.
+ male	a person or animal that produces sperm	The peacock is a male bird.
+ malice	the intention or desire to do evil; ill will	There was no malice in his joke.
+ marathon	a long-distance running race	She trained for a year to run a marathon.
+ marshmallow	a soft sweet made from sugar and gelatin	We ate a pink marshmallow after lunch.
+ master	a person who has complete control of something	He is a master chef.
+ metaphor	a figure of speech comparing two unlike things	“Time is money” is a common metaphor.
+ meridian	a circle of longitude on the Earth	Greenwich is the Prime Meridian.
+ met	past tense of meet	I met my teacher yesterday.
+ meteorology	the science of weather and the atmosphere	She studies meteorology.
+ melancholy	a feeling of sadness	The music made me feel melancholy.
+ migration	seasonal movement of animals	The migration of birds is amazing.
+ mitochondria	parts of cells that produce energy	Mitochondria give cells energy.
+ moisture	water in the air or on surfaces	The air was heavy with moisture.
+ molars	large back teeth used for grinding	Molars help us chew food.
+ monologue	a long speech by one person	The actor gave a powerful monologue.
+ moss	a small green plant that grows in damp places	Moss covered the old wall.
+ mosque	a Muslim place of worship	Many people visit the mosque.
+ mount	to climb or go up	We will mount the hill.
+ muscle	tissue that moves parts of the body	Strong muscles help you run.
+ narrow	small in width	The road was narrow.
+ nautical	related to the sea or ships	The room had a nautical theme.
+ neurons	nerve cells that send signals	The brain uses neurons.
+ nerve	a fiber that carries signals in the body	The dentist numbed my nerve.
+ nickname	an informal name	His nickname is Speedy.
+ night	the time of darkness	The stars shine at night.
+ notorious	famous for something bad or good	The street is notorious for traffic.
+ nutritious	healthy and nourishing	Spinach is nutritious.
+ obsession	being overly focused on something	Stamp collecting was his obsession.
+ offensive	causing anger or hurt	His words were offensive.
+ operation	a surgical procedure	The patient needed an operation.
+ opponent	someone you compete against	She played her opponent in chess.
+ orient	to align or position	Orient the map north.
+ otherwise	in a different way	Study hard, otherwise you may fail.
+ outrageous	shockingly bad or excessive	The price was outrageous.
+ patience	ability to wait calmly	Teaching needs patience.
+ paranormal	beyond normal scientific understanding	She enjoys paranormal stories.
+ passionate	having strong feelings	He is passionate about wildlife.
+ paycheck	money paid for work	I got my first paycheck.
+ peninsula	land almost surrounded by water	Florida is a peninsula.
+ pharynx	the passage behind the nose and mouth	Food passes through the pharynx.
+ philosopher	a person who studies philosophy	Socrates was a famous philosopher.
+ phrase	a small group of words that form a unit	The teacher explained the phrase.
+ pollen	fine yellow powder from flowers	Bees carry pollen.
+ pollination	the transfer of pollen to fertilize plants	Wind helps with pollination.
+ post office	a place that provides mail services	I went to the post office.
+ prejudice	an unfair opinion formed without facts	Prejudice is wrong.
+ preserve	to keep something in its original state	We must preserve history.
+ program	a planned series of events or courses	The school started a new program.
+ prokaryotic	a type of cell without a nucleus	Bacteria are prokaryotic.
+ property	something that belongs to someone	They sold their property.
+ pry	to ask too many personal questions	Don’t pry into her life.
+ pyramid	a stone structure with sloping sides	The pyramids are in Egypt.
+ quantity	the amount of something	We need a large quantity.
+ raft	a flat floating structure	We crossed the river on a raft.
+ ranch	a large farm	He works on a cattle ranch.
+ rare	not common	That book is rare.
+ read	to look at written words	I like to read before bed.
+ receptor	a cell that responds to stimuli	Taste buds have receptors.
+ reinforce	to make stronger	They reinforced the bridge.
+ reindeer	a deer from cold regions	Santa rides with reindeer.
+ relief	a feeling of calm after worry	She felt relief after the test.
+ renewable resources	natural resources that can be replaced	Wind and solar are renewable resources.
+ repair	to fix something	He will repair the chair.
+ resort	a place for vacations	We stayed at a beach resort.
+ reuse	to use again	Try to reuse plastic bags.
+ ring	a circular band worn on a finger	She wore a gold ring.
+ river	a large flowing body of water	The boat moved down the river.
+ robbery	taking things by force	The robbery was reported.
+ rush	to move in a hurry	We had to rush.
+ sanctuary	a safe place	The animals live in a sanctuary.
+ skeptical	having doubts	He is skeptical.
+ sheet	a piece of cloth for a bed	She changed the sheet.
+ shout	to speak loudly	Do not shout in the library.
+ silkworms	insects that make silk	Silkworms produce silk.
+ silver	a shiny white metal	Her necklace is silver.
+ sled	a vehicle for snow	The children rode the sled.
+ snakebite	a bite from a snake	They treated the snakebite.
+ snowflake	a piece of snow	Each snowflake is unique.
+ soda	a fizzy drink	I drank orange soda.
+ soil	earth for plants	The garden needs soil.
+ solar	related to the sun	Solar panels make energy.
+ solution	a way to solve a problem	The scientists found a solution.
+ somehow	in a way that is not known	We will manage somehow.
+ something	an unknown thing	I heard something.
+ somewhere	in an unknown place	My phone is somewhere.
+ speak	to say something	He will speak tomorrow.
+ speed	how fast something moves	The car has great speed.
+ spiral	winding in a curve	The water went down in a spiral.
+ spirit	the nonphysical part of a person	She has a kind spirit.
+ spoil	to ruin something	Milk will spoil if left out.
+ spectacle	something visually impressive	The sunset was a spectacle.
+ squeeze	to press tightly	Squeeze the lemon.
+ stage	a period in a process	The project is in an early stage.
+ stare	to look fixedly	It is rude to stare.
+ stem	the main stalk of a plant	The flower has a long stem.
+ stereo	a sound system	He bought a new stereo.
+ stimulus	something that causes a reaction	Light is a stimulus for plants.
+ stove	a cooking or heating device	Turn off the stove.
+ stretch out	to extend your body	Stretch out your legs.
+ subject	something being studied	Math is my favorite subject.
+ suggested	proposed an idea	The teacher suggested a new book.
+ sunlight	light from the sun	Plants need sunlight.
+ suspect	to think something is true	The police suspect theft.
+ tadpole	a baby frog	We saw a tadpole.
+ talkative	liking to talk a lot	She is very talkative.
+ tendon	tissue connecting muscle to bone	He injured a tendon.
+ thunder	a loud sound after lightning	We heard thunder.
+ toboggan	a sled for snow	They rode a toboggan.
+ tolerance	acceptance of differences	Tolerance is important.
+ training	learning a skill	She is in training.
+ turbulence	violent air movement	The plane hit turbulence.
+ undertake	to take on a task	They will undertake the job.
+ unpredictable	not easy to predict	The weather is unpredictable.
+ unicellular	made of one cell	Amoebas are unicellular.
+ virtual	existing online	We had a virtual meeting.
+ vivid	very clear and strong	I had a vivid dream.
+ viviparous	giving birth to live young	Humans are viviparous.
+ vow	a serious promise	They made a vow.
+ wagged	moved back and forth	The dog wagged its tail.
+ war	armed conflict	The war ended.
+ wavy	having waves	She has wavy hair.
+ weapon	something used to cause harm	The guard carried a weapon.
+ werewolf	a person who turns into a wolf	The movie showed a werewolf.
+ which	used to choose from options	Which one do you want?
+ wildlife	wild animals	The park protects wildlife.
+ wind energy	energy from wind	Wind energy is clean.
+ womb	where a baby grows	The baby is in the womb.
+ wonderful	very good	We had a wonderful time.
+ wring	to twist and squeeze	Wring the cloth.
+ yearly	happening every year	It is a yearly event.
+ zygote	the first cell formed from sperm and egg	A zygote begins life.
+</script>
+
 <script>
 /** Your exact list (kept in this exact order for band numbers) **/
 const WORDS = [
@@ -494,7 +817,76 @@ const WORDS = [
   "weapon","werewolf","which","wildlife","wind energy","womb","wonderful","wring","yearly","zygote"
 ];
 
+// Help dictionary: word -> {def, ex}
+const HELP = Object.create(null);
+
+function parseHelpTSV(){
+  const el = document.getElementById("helpTSV");
+  if(!el) return;
+  const raw = (el.textContent || "").trim();
+  if(!raw) return;
+
+  const lines = raw.split(/\r?\n/).filter(Boolean);
+  if(lines.length <= 1) return;
+
+  for(let i=1;i<lines.length;i++){
+    const parts = lines[i].split("\t");
+    if(parts.length < 3) continue;
+    const word = (parts[0] || "").trim();
+    const def  = (parts[1] || "").trim();
+    const ex   = (parts.slice(2).join("\t") || "").trim();
+    if(!word) continue;
+    HELP[word] = { def, ex };
+  }
+}
+
 const VOICE_LANG = "en-GB";
+let preferredVoice = null;
+
+function pickBestUKVoice(){
+  const voices = window.speechSynthesis.getVoices();
+  if(!voices || !voices.length) return null;
+
+  // 1) solo voces en-GB
+  const uk = voices.filter(v => (v.lang || "").toLowerCase() === "en-gb");
+  if(!uk.length) return null;
+
+  // 2) preferir voces buenas (Siri/premium) si existen
+  const preferredNameParts = [
+    "Siri",
+    "Daniel",
+    "Serena",
+    "Kate",
+    "Oliver"
+  ];
+
+  for(const part of preferredNameParts){
+    const v = uk.find(v => (v.name || "").includes(part));
+    if(v) return v;
+  }
+
+  // 3) fallback: primera UK
+  return uk[0];
+}
+
+function ensureVoiceLoaded(){
+  // iOS carga las voces tarde; esto lo “despierta”
+  preferredVoice = pickBestUKVoice();
+  if(!preferredVoice){
+    // fuerza a que iOS/Safari intente cargar la lista
+    window.speechSynthesis.getVoices();
+  }
+}
+
+// iOS: se dispara cuando ya están disponibles
+window.speechSynthesis.onvoiceschanged = () => {
+  preferredVoice = pickBestUKVoice();
+};
+
+// llama una vez al arrancar (por si ya están cargadas)
+ensureVoiceLoaded();
+
+
 const FAILED_BONUS_WEIGHT = 4;
 
 const USERS = {
@@ -554,13 +946,25 @@ const btnOrderRandom = document.getElementById("orderRandom");
 const btnOrderInOrder = document.getElementById("orderInOrder");
 const orderHint = document.getElementById("orderHint");
 
+// Help panel elements
+const helpPanel = document.getElementById("helpPanel");
+const helpText = document.getElementById("helpText");
+const btnDef = document.getElementById("btnDef");
+const btnEx  = document.getElementById("btnEx");
+const btnHelpClose = document.getElementById("btnHelpClose");
+
 /** Buttons **/
 document.getElementById("btnSpeak").addEventListener("click", () => speakCurrent());
+document.getElementById("btnHelp").addEventListener("click", () => openHelp());
 document.getElementById("btnShow").addEventListener("click", revealWordLetterByLetter);
 document.getElementById("btnNext").addEventListener("click", () => pickNewWord(true));
 
 document.getElementById("btnUp").addEventListener("click", () => markWord(true));
 document.getElementById("btnDown").addEventListener("click", () => markWord(false));
+
+btnHelpClose.addEventListener("click", closeHelpPanel);
+btnDef.addEventListener("click", () => speakHelp("def"));
+btnEx.addEventListener("click", () => speakHelp("ex"));
 
 document.getElementById("menuBtn").addEventListener("click", openMenu);
 document.getElementById("btnCloseMenu").addEventListener("click", closeMenu);
@@ -596,6 +1000,7 @@ btnOrderInOrder.addEventListener("click", ()=> setOrderMode(ORDER_MODES.ORDER));
 init();
 
 function init(){
+  parseHelpTSV();
   maxN.textContent = String(WORDS.length);
   fromSlider.max = String(Math.max(1, WORDS.length));
   toSlider.max = String(Math.max(1, WORDS.length));
@@ -791,6 +1196,7 @@ function drawNextIndex(){
 
 function pickNewWord(autoSpeak){
   if(!currentUser) return;
+  closeHelpPanel();
 
   const idx = drawNextIndex();
   if(idx === null){
@@ -833,7 +1239,8 @@ function speakCurrent(){
 
   const u = new SpeechSynthesisUtterance(w);
   u.lang = VOICE_LANG;
-  u.rate = 1.0;
+  if(preferredVoice) u.voice = preferredVoice;   // ✅ AQUÍ
+  u.rate = 0.95;
   u.pitch = 1.05;
 
   u.onstart = () => setStatus("Playing…");
@@ -841,6 +1248,69 @@ function speakCurrent(){
   u.onerror = () => setStatus("Could not play");
 
   window.speechSynthesis.speak(u);
+}
+
+function speakText(text){
+  if(!text) return;
+  if(!("speechSynthesis" in window)){
+    alert("This browser does not support SpeechSynthesis.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = VOICE_LANG;
+  if(preferredVoice) u.voice = preferredVoice;   // ✅ AQUÍ
+  u.rate = 1.0;
+  u.pitch = 1.02;
+  window.speechSynthesis.speak(u);
+}
+
+function openHelp(){
+  openHelpPanel();
+  const entry = HELP[currentWord()] || null;
+  if(!entry){
+    helpText.textContent = "No definition/example for this word.";
+    speakText("Sorry. No definition or example is available for this word.");
+    return;
+  }
+  helpText.textContent = "Choose: Definition or Example.";
+  speakText("Would you like the definition or an example sentence?");
+}
+
+function openHelpPanel(){
+  helpPanel.style.display = "flex";
+}
+
+function closeHelpPanel(){
+  helpPanel.style.display = "none";
+  helpText.textContent = "";
+}
+
+function speakHelp(kind){
+  const w = currentWord();
+  const entry = HELP[w] || null;
+  if(!entry){
+    helpText.textContent = "No definition/example for this word.";
+    speakText("Sorry. No definition or example is available for this word.");
+    return;
+  }
+  if(kind === "def"){
+    if(!entry.def){
+      helpText.textContent = "No definition available.";
+      speakText("No definition available.");
+      return;
+    }
+    helpText.textContent = entry.def;
+    speakText("Definition. " + entry.def);
+  }else{
+    if(!entry.ex){
+      helpText.textContent = "No example available.";
+      speakText("No example available.");
+      return;
+    }
+    helpText.textContent = entry.ex;
+    speakText("Example sentence. " + entry.ex);
+  }
 }
 
 let revealTimer = null;
