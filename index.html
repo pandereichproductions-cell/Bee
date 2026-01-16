@@ -387,6 +387,67 @@
 	  background: rgba(255,255,255,.12);
 	}
 
+    /* Awards */
+    .awardsRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin: 12px 0 6px;
+    }
+    .award{
+      width: 56px;
+      height: 56px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:28px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      transition: transform .15s ease, filter .2s ease, opacity .2s ease;
+      user-select:none;
+    }
+    .award.locked{
+      filter: grayscale(1);
+      opacity: .35;
+    }
+    .award.unlocked{
+      opacity: 1;
+    }
+    .award.pop{
+      transform: scale(1.14);
+    }
+
+    .confetti{
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 120;
+      display:none;
+    }
+
+    .awardMsg{
+      text-align:center;
+      margin-top:6px;
+      font-size:14px;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+	
+	.nextBtn{
+	  min-width: 48px !important;
+	  width: 48px;
+	  padding: 12px 0;
+	  font-size: 20px;
+	  border-radius: 50%;
+	  background: rgba(255,255,255,.08);
+	  border: 1px solid rgba(255,255,255,.12);
+	}
+
 
   </style>
 </head>
@@ -411,12 +472,16 @@
           <div class="pill" id="hardPill">👎 To practise: 0</div>
         </div>
 
+        <div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
+        <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
+        <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
         <div class="bigWord" id="wordBox">• • •</div>
 
         <div class="controls" id="primaryControls">
 		  <button class="primary" id="btnSpeak">🔊 Listen</button>
 		  <button id="btnShow">👀 Show</button>
-		  <button class="next" id="btnNext">➡️ Next</button>
+		  <button class="next nextBtn" id="btnNext">➡️</button>
 		  <button id="btnHelp" class="helpBtn">❓</button>
 		</div>
 
@@ -495,6 +560,9 @@
             <button id="btnApplyRange">Apply band</button>
             <button id="btnResetFails">Clear 👎 list</button>
           </div>
+          <div class="btnRow" style="margin-top:10px;">
+            <button id="btnResetAwards">Reset awards 🔒</button>
+          </div>
         </div>
 
         <div class="tabs">
@@ -523,7 +591,7 @@
             <div class="sub">Boy</div>
           </div>
           <div class="userBtn" data-user="MHO">
-            <div class="avatar">👧🏽</div>
+            <div class="avatar">👧🏻</div>
             <div class="initials">MHO</div>
             <div class="sub">Girl</div>
           </div>
@@ -843,20 +911,36 @@ function parseHelpTSV(){
 const VOICE_LANG = "en-GB";
 let preferredVoice = null;
 
+let voicesActivated = false;
+
+function silentActivation(){
+  if(voicesActivated) return;
+  voicesActivated = true;
+
+  const silent = new SpeechSynthesisUtterance(" ");
+  silent.volume = 0;
+  silent.lang = VOICE_LANG;
+  window.speechSynthesis.speak(silent);
+}
+
+
 function pickBestUKVoice(){
   const voices = window.speechSynthesis.getVoices();
   if(!voices || !voices.length) return null;
 
   // 1) solo voces en-GB
-  const uk = voices.filter(v => (v.lang || "").toLowerCase() === "en-gb");
+  // const uk = voices.filter(v => (v.lang || "").toLowerCase() === "en-gb");
+  // Cambio sugerido en el paso 1
+	const uk = voices.filter(v => (v.lang || "").replace('_', '-').toLowerCase() === "en-gb");
+
   if(!uk.length) return null;
 
   // 2) preferir voces buenas (Siri/premium) si existen
   const preferredNameParts = [
+	"Serena",
+	"Kate",
     "Siri",
     "Daniel",
-    "Serena",
-    "Kate",
     "Oliver"
   ];
 
@@ -887,11 +971,176 @@ window.speechSynthesis.onvoiceschanged = () => {
 ensureVoiceLoaded();
 
 
+
+
+// ===== Awards / Rewards (per user) =====
+function keyStats(user){ return `spbee_${user}_stats`; }
+
+function loadStats(user){
+  try{
+    const raw = localStorage.getItem(keyStats(user));
+    if(!raw) return { correct:0, wrong:0, streak:0, unlocked:{} };
+    const s = JSON.parse(raw);
+    return {
+      correct: s.correct || 0,
+      wrong: s.wrong || 0,
+      streak: s.streak || 0,
+      unlocked: s.unlocked || {}
+    };
+  }catch{
+    return { correct:0, wrong:0, streak:0, unlocked:{} };
+  }
+}
+
+function saveStats(user, stats){
+  try{ localStorage.setItem(keyStats(user), JSON.stringify(stats)); }catch{}
+}
+
+let stats = { correct:0, wrong:0, streak:0, unlocked:{} };
+
+const AWARDS = [
+  { id:"bronze", need: 20,  icon:"🥉", label:"Bronze Medal" },
+  { id:"silver", need: 50, icon:"🥈", label:"Silver Medal" },
+  { id:"gold",   need: 150, icon:"🥇", label:"Gold Medal" },
+  { id:"trophy", need: 350, icon:"🏆", label:"Trophy" },
+  { id:"crown",  need: 1000, icon:"👑", label:"Golden Crown" }
+];
+
+const awardsRow = document.getElementById("awardsRow");
+
+function renderAwards(){
+  if(!awardsRow) return;
+  awardsRow.innerHTML = AWARDS.map(a => {
+    const ok = !!stats.unlocked[a.id];
+    const cls = ok ? "award unlocked" : "award locked";
+    return `<div class="${cls}" data-award="${a.id}" title="${a.label}">${a.icon}</div>`;
+  }).join("");
+}
+
+let awardMsgTimer = null;
+function showAwardMessage(text){
+  const el = document.getElementById("awardMsg");
+  if(!el) return;
+  el.textContent = text;
+  if(awardMsgTimer) clearTimeout(awardMsgTimer);
+  awardMsgTimer = setTimeout(()=>{ el.textContent = ""; }, 4000);
+}
+
+// Tap an award to see progress / unlock message
+awardsRow && awardsRow.addEventListener("click", (e)=>{
+  const el = e.target.closest(".award");
+  if(!el) return;
+  const id = el.getAttribute("data-award");
+  const award = AWARDS.find(a => a.id === id);
+  if(!award) return;
+
+  const correct = stats.correct || 0;
+  const unlocked = !!stats.unlocked[id];
+
+  let message = "";
+  if(unlocked){
+    message = `${award.label} unlocked! You achieved ${award.need} correct answers. Great job!`;
+  }else{
+    message = `You need ${award.need} correct answers to unlock this reward. You currently have ${correct}.`;
+  }
+
+  showAwardMessage(message);
+  speakText(message);
+});
+
+function popAward(id){
+  const el = document.querySelector(`.award[data-award="${id}"]`);
+  if(!el) return;
+  el.classList.add("pop");
+  setTimeout(()=> el.classList.remove("pop"), 260);
+}
+
+function checkAwardsAndCelebrate(){
+  let unlockedAny = false;
+  let lastUnlocked = null;
+
+  for(const a of AWARDS){
+    if(stats.correct >= a.need && !stats.unlocked[a.id]){
+      stats.unlocked[a.id] = true;
+      unlockedAny = true;
+      lastUnlocked = a.id;
+    }
+  }
+
+  if(unlockedAny){
+    saveStats(currentUser, stats);
+    renderAwards();
+    if(lastUnlocked) popAward(lastUnlocked);
+    launchConfetti();
+  }
+}
+
+// Confetti (simple canvas burst)
+const confettiCanvas = document.getElementById("confetti");
+let confettiRaf = null;
+
+function launchConfetti(){
+  if(!confettiCanvas) return;
+  const ctx = confettiCanvas.getContext("2d");
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+  confettiCanvas.style.display = "block";
+
+  const colors = ["#ffd166","#3ee08f","#ff6b6b","#7aa7ff","#ffffff"];
+  const N = 180;
+  const parts = Array.from({length:N}, () => ({
+    x: Math.random() * confettiCanvas.width,
+    y: -20 - Math.random() * 200,
+    vx: (Math.random() - 0.5) * 7,
+    vy: 2 + Math.random() * 6,
+    r: 3 + Math.random() * 5,
+    a: Math.random() * Math.PI,
+    va: (Math.random() - 0.5) * 0.25,
+    c: colors[(Math.random() * colors.length) | 0]
+  }));
+
+  const start = performance.now();
+
+  function frame(t){
+    const dt = t - start;
+    ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+    for(const p of parts){
+      p.x += p.vx;
+      p.y += p.vy;
+      p.a += p.va;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.a);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+      ctx.restore();
+    }
+
+    if(dt < 3000){
+      confettiRaf = requestAnimationFrame(frame);
+    }else{
+      confettiCanvas.style.display = "none";
+      ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+      if(confettiRaf) cancelAnimationFrame(confettiRaf);
+      confettiRaf = null;
+    }
+  }
+
+  if(confettiRaf) cancelAnimationFrame(confettiRaf);
+  confettiRaf = requestAnimationFrame(frame);
+}
+
+window.addEventListener("resize", () => {
+  if(confettiCanvas && confettiCanvas.style.display !== "none"){
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+});
 const FAILED_BONUS_WEIGHT = 4;
 
 const USERS = {
   CHO: { label: "CHO", emoji: "👦🏼" },
-  MHO: { label: "MHO", emoji: "👧🏽" }
+  MHO: { label: "MHO", emoji: ">👧🏻" }
 };
 
 // practice mode (per user)
@@ -954,17 +1203,17 @@ const btnEx  = document.getElementById("btnEx");
 const btnHelpClose = document.getElementById("btnHelpClose");
 
 /** Buttons **/
-document.getElementById("btnSpeak").addEventListener("click", () => speakCurrent());
-document.getElementById("btnHelp").addEventListener("click", () => openHelp());
-document.getElementById("btnShow").addEventListener("click", revealWordLetterByLetter);
-document.getElementById("btnNext").addEventListener("click", () => pickNewWord(true));
+document.getElementById("btnSpeak").addEventListener("click", () => { silentActivation(); speakCurrent(); });
+document.getElementById("btnHelp").addEventListener("click", () => { silentActivation(); openHelp(); });
+document.getElementById("btnShow").addEventListener("click", () => { silentActivation(); revealWordLetterByLetter(); });
+document.getElementById("btnNext").addEventListener("click", () => { silentActivation(); pickNewWord(true); });
 
 document.getElementById("btnUp").addEventListener("click", () => markWord(true));
 document.getElementById("btnDown").addEventListener("click", () => markWord(false));
 
 btnHelpClose.addEventListener("click", closeHelpPanel);
-btnDef.addEventListener("click", () => speakHelp("def"));
-btnEx.addEventListener("click", () => speakHelp("ex"));
+btnDef.addEventListener("click", () => { silentActivation(); speakHelp("def"); });
+btnEx.addEventListener("click", () => { silentActivation(); speakHelp("ex"); });
 
 document.getElementById("menuBtn").addEventListener("click", openMenu);
 document.getElementById("btnCloseMenu").addEventListener("click", closeMenu);
@@ -977,6 +1226,8 @@ elSearch.addEventListener("input", renderList);
 
 document.getElementById("btnApplyRange").addEventListener("click", applyBandFromSliders);
 document.getElementById("btnResetFails").addEventListener("click", clearFailsForUser);
+
+document.getElementById("btnResetAwards").addEventListener("click", resetAwardsWithPassword);
 
 fromSlider.addEventListener("input", syncBandUIFromSliders);
 toSlider.addEventListener("input", syncBandUIFromSliders);
@@ -1024,6 +1275,9 @@ function selectUser(userKey){
   practiceMode = loadPracticeMode(userKey);
   orderMode = loadOrderMode(userKey);
 
+  stats = loadStats(userKey);
+  renderAwards();
+
   band.from = clampInt(band.from, 1, Math.max(1, WORDS.length));
   band.to   = clampInt(band.to, band.from, Math.max(1, WORDS.length));
 
@@ -1032,6 +1286,8 @@ function selectUser(userKey){
   setSlidersFromBand();
   syncModeUI();
   syncOrderUI();
+
+
   updatePills();
   closeUserPicker();
 
@@ -1094,6 +1350,21 @@ function clearFailsForUser(){
   renderList();
   setStatus("Cleared 👎 list");
 }
+
+function resetAwardsWithPassword(){
+  if(!currentUser) return;
+  const pw = prompt('Contraseña para reiniciar premios');
+  if(pw !== 'papa'){
+    setStatus('Contraseña incorrecta');
+    return;
+  }
+  // reset only awards/progress (not failed words)
+  stats = { correct:0, wrong:0, streak:0, unlocked:{} };
+  saveStats(currentUser, stats);
+  renderAwards();
+  setStatus('Premios reiniciados');
+}
+
 
 function setPracticeMode(mode){
   if(!currentUser) return;
@@ -1250,7 +1521,7 @@ function speakCurrent(){
   window.speechSynthesis.speak(u);
 }
 
-function speakText(text){
+function speakText(text, onEnd){
   if(!text) return;
   if(!("speechSynthesis" in window)){
     alert("This browser does not support SpeechSynthesis.");
@@ -1259,9 +1530,11 @@ function speakText(text){
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = VOICE_LANG;
-  if(preferredVoice) u.voice = preferredVoice;   // ✅ AQUÍ
+  if(preferredVoice) u.voice = preferredVoice;
   u.rate = 1.0;
   u.pitch = 1.02;
+  u.onend = () => { if(onEnd) onEnd(); };
+  u.onerror = () => { if(onEnd) onEnd(); };
   window.speechSynthesis.speak(u);
 }
 
@@ -1300,16 +1573,16 @@ function speakHelp(kind){
       speakText("No definition available.");
       return;
     }
-    helpText.textContent = entry.def;
-    speakText("Definition. " + entry.def);
+        helpText.textContent = "🔊 Listening…";
+    speakText("Definition. " + entry.def, () => { helpText.textContent = ""; });
   }else{
     if(!entry.ex){
       helpText.textContent = "No example available.";
       speakText("No example available.");
       return;
     }
-    helpText.textContent = entry.ex;
-    speakText("Example sentence. " + entry.ex);
+        helpText.textContent = "🔊 Listening…";
+    speakText("Example sentence. " + entry.ex, () => { helpText.textContent = ""; });
   }
 }
 
@@ -1357,6 +1630,18 @@ function markWord(gotIt){
     saveHardWords(currentUser, [...hardSet]);
     setStatus("Saved to practise 📌");
   }
+
+  // Stats + awards (per user)
+  if(gotIt){
+    stats.correct++;
+    stats.streak++;
+  }else{
+    stats.wrong++;
+    stats.streak = 0;
+  }
+  saveStats(currentUser, stats);
+  renderAwards();
+  checkAwardsAndCelebrate();
 
   updatePills();
 
@@ -1491,9 +1776,9 @@ function loadOrderMode(user){
   try{
     const raw = localStorage.getItem(keyOrder(user));
     if(raw === ORDER_MODES.ORDER) return ORDER_MODES.ORDER;
-    return ORDER_MODES.RANDOM;
+    return ORDER_MODES.ORDER;
   }catch{
-    return ORDER_MODES.RANDOM;
+    return ORDER_MODES.ORDER;
   }
 }
 // NEW
