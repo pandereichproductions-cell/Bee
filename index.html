@@ -449,7 +449,157 @@
 	}
 
 
-  </style>
+  
+.controlRow{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+}
+.controlRowMain{ margin-bottom:10px; }
+.controlRowNav{ opacity:0.95; }
+
+
+.bandNumInput{
+  width: 78px;
+  text-align: center;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.92);
+  font-weight: 800;
+  padding: 8px 10px;
+  outline: none;
+}
+.bandNumInput:focus{
+  box-shadow: 0 0 0 3px rgba(255,255,255,.18);
+}
+.bandNumInput::-webkit-outer-spin-button,
+.bandNumInput::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bandNumInput[type=number]{ -moz-appearance: textfield; }
+
+
+/* --- Practice band refinements --- */
+.bandNumInput{
+  width: 56px !important;
+  padding: 6px 6px !important;
+  font-size: 14px;
+}
+
+/* Make sliders longer and avoid overlap */
+.rangeRow{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.rangeRow input[type="range"]{
+  width: 100%;
+  margin-left: 6px;
+}
+
+
+.listItem{ cursor: pointer; }
+.listItem:hover{ filter: brightness(1.07); }
+
+
+#statusBadge{
+  display:block;
+  text-align:center;
+  margin: 8px 0 6px 0;
+  font-weight: 700;
+  opacity: .9;
+}
+
+
+/* Inline status between pills */
+.statusInline{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.18);
+  opacity: .95;
+}
+.rowTop{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+
+#statsPills{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  margin: 10px 0 6px 0;
+}
+
+
+/* Range pill anchored inside the game window */
+main > section.card{
+  position: relative;
+}
+#rangePill{
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+}
+
+
+/* 🪙 success pop animation */
+@keyframes pillPop{
+  0%{ transform: scale(1); }
+  35%{ transform: scale(1.22); }
+  70%{ transform: scale(0.98); }
+  100%{ transform: scale(1); }
+}
+.pillPop{
+  animation: pillPop 260ms ease-out;
+}
+
+
+/* Coin fly (emoji) */
+.coinFly{
+  position: fixed;
+  z-index: 9999;
+  width: 32px;
+  height: 32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 24px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));
+}
+
+/* Poop fly (from 💩 button to 💩 pill) */
+.poopFly{
+  position: fixed;
+  z-index: 9999;
+  width: 32px;
+  height: 32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 28px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));
+}
+
+</style>
 </head>
 
 <body>
@@ -460,35 +610,48 @@
           <h1>SPELLING Bee 25–26</h1>
           <div class="subtitle">5th and 6th graders</div>
         </div>
-        <div class="badge" id="statusBadge">Choose user</div>
+        
       </div>
       <button class="menuBtn" id="menuBtn" aria-label="Menu">☰ <span id="userBadge">—</span></button>
     </header>
 
     <main>
       <section class="card">
-        <div class="row">
-          <div class="pill" id="rangePill">Range: —</div>
-          <div class="pill" id="hardPill">👎 To practise: 0</div>
-        </div>
+        <div class="pill" id="rangePill">—</div>
+        
+<div class="row rowTop">
+      <div id="statsPills">
+<div class="pill" id="goodPill">🪙 0</div>
+      <div class="pill" id="hardPill">💩 To practise: 0</div>
+</div>
+</div>
 
-        <div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
+
+
+
+        <div id="statsPills"></div>
+<div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
         <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
         <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
         <div class="bigWord" id="wordBox">• • •</div>
 
         <div class="controls" id="primaryControls">
-		  <button class="primary" id="btnSpeak">🔊 Listen</button>
-		  <button id="btnShow">👀 Show</button>
-		  <button class="next nextBtn" id="btnNext">➡️</button>
-		  <button id="btnHelp" class="helpBtn">❓</button>
-		</div>
+<div class="controlRow controlRowMain">
+  <button class="primary" id="btnSpeak">🔊 Listen</button>
+  <button id="btnShow">👀 Show</button>
+</div>
+<div class="controlRow controlRowNav">
+  <button class="next nextBtn" id="btnPrev" title="Previous word">⬅️</button>
+  <button class="next nextBtn" id="btnNext">➡️</button>
+  <button id="btnHelp" class="helpBtn">❓</button>
+</div>
+</div>
 
 
         <div class="controls" id="markRow" style="display:none; margin-top:14px;">
-          <button class="good" id="btnUp">👍 I got it</button>
-          <button class="bad" id="btnDown">👎 Need practise</button>
+          <button class="good" id="btnUp">🪙 I got it</button>
+          <button class="bad" id="btnDown">💩 Need practise</button>
         </div>
       </section>
     </main>
@@ -522,7 +685,7 @@
           <div class="small" id="modeHint">—</div>
           <div class="seg">
             <button id="modeAll" class="active">All words</button>
-            <button id="modeFailed">Failed only (👎)</button>
+            <button id="modeFailed">Failed only (💩)</button>
           </div>
         </div>
 
@@ -545,21 +708,19 @@
           <div class="small">Choose word numbers (1 to <span id="maxN">0</span>)</div>
 
           <div class="rangeRow">
-            <div class="mono" id="fromVal">1</div>
+            <input type="number" class="mono bandNumInput" id="fromVal" value="1" inputmode="numeric" />
             <input type="range" id="fromSlider" min="1" max="1" value="1" />
-            <div class="small" style="text-align:right;">From</div>
+            
           </div>
 
           <div class="rangeRow">
-            <div class="mono" id="toVal">1</div>
+            <input type="number" class="mono bandNumInput" id="toVal" value="1" inputmode="numeric" />
             <input type="range" id="toSlider" min="1" max="1" value="1" />
-            <div class="small" style="text-align:right;">To</div>
+            
           </div>
 
           <div class="btnRow" style="margin-top:10px;">
-            <button id="btnApplyRange">Apply band</button>
-            <button id="btnResetFails">Clear 👎 list</button>
-          </div>
+</div>
           <div class="btnRow" style="margin-top:10px;">
             <button id="btnResetAwards">Reset awards 🔒</button>
           </div>
@@ -567,7 +728,7 @@
 
         <div class="tabs">
           <button class="tabBtn active" id="tabAll">All words (band)</button>
-          <button class="tabBtn" id="tabBad">Failed (👎) (band)</button>
+          <button class="tabBtn" id="tabBad">Failed (💩) (band)</button>
         </div>
 
         <input class="search" id="searchBox" placeholder="Search…" />
@@ -1039,9 +1200,9 @@ awardsRow && awardsRow.addEventListener("click", (e)=>{
 
   let message = "";
   if(unlocked){
-    message = `${award.label} unlocked! You achieved ${award.need} correct answers. Great job!`;
+    message = `${award.label} unlocked! You achieved ${award.need} coins. Great job!`;
   }else{
-    message = `You need ${award.need} correct answers to unlock this reward. You currently have ${correct}.`;
+    message = `You need ${award.need} coins to unlock this reward. You currently have ${correct}.`;
   }
 
   showAwardMessage(message);
@@ -1140,7 +1301,7 @@ const FAILED_BONUS_WEIGHT = 4;
 
 const USERS = {
   CHO: { label: "CHO", emoji: "👦🏼" },
-  MHO: { label: "MHO", emoji: ">👧🏻" }
+  MHO: { label: "MHO", emoji: "👧🏻" }
 };
 
 // practice mode (per user)
@@ -1155,15 +1316,19 @@ let currentUser = null;
 let hardSet = new Set();
 let band = { from: 1, to: 1 };
 let currentIndex = null;
+let navBack = [];     // stack of previously visited indices
+let navForward = [];  // stack for forward navigation after going back
+
 let revealed = false;
 
 // deck: no repeats until all words in practice set are shown once
 let deck = [];
 
-const elStatus = document.getElementById("statusBadge");
 const elUserBadge = document.getElementById("userBadge");
 const elRangePill = document.getElementById("rangePill");
 const elHardPill = document.getElementById("hardPill");
+
+const elGoodPill = document.getElementById("goodPill");
 const elWordBox = document.getElementById("wordBox");
 
 const elPrimaryControls = document.getElementById("primaryControls");
@@ -1171,6 +1336,20 @@ const elMarkRow = document.getElementById("markRow");
 
 const backdrop = document.getElementById("drawerBackdrop");
 const elListBox = document.getElementById("listBox");
+
+
+/* Tap a list item to hear pronunciation (All/Failed in band) */
+elListBox.addEventListener("click", (e) => {
+  const item = e.target.closest(".listItem");
+  if(!item) return;
+  const enc = item.getAttribute("data-w");
+  if(!enc) return;
+  const w = decodeURIComponent(enc);
+  // Ensure voices are unlocked on iOS
+  silentActivation();
+  speakText(w, () => setStatus("Ready"));
+});
+
 const elSearch = document.getElementById("searchBox");
 const tabAll = document.getElementById("tabAll");
 const tabBad = document.getElementById("tabBad");
@@ -1206,11 +1385,11 @@ const btnHelpClose = document.getElementById("btnHelpClose");
 document.getElementById("btnSpeak").addEventListener("click", () => { silentActivation(); speakCurrent(); });
 document.getElementById("btnHelp").addEventListener("click", () => { silentActivation(); openHelp(); });
 document.getElementById("btnShow").addEventListener("click", () => { silentActivation(); revealWordLetterByLetter(); });
+document.getElementById("btnPrev").addEventListener("click", () => { silentActivation(); goPrev(true); });
 document.getElementById("btnNext").addEventListener("click", () => { silentActivation(); pickNewWord(true); });
 
-document.getElementById("btnUp").addEventListener("click", () => markWord(true));
-document.getElementById("btnDown").addEventListener("click", () => markWord(false));
-
+document.getElementById("btnUp").addEventListener("click", () => { silentActivation(); markWord(true); });
+document.getElementById("btnDown").addEventListener("click", () => { silentActivation(); markWord(false); });
 btnHelpClose.addEventListener("click", closeHelpPanel);
 btnDef.addEventListener("click", () => { silentActivation(); speakHelp("def"); });
 btnEx.addEventListener("click", () => { silentActivation(); speakHelp("ex"); });
@@ -1223,15 +1402,14 @@ backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeMenu();
 tabAll.addEventListener("click", ()=>{ activeTab="all"; tabAll.classList.add("active"); tabBad.classList.remove("active"); renderList(); });
 tabBad.addEventListener("click", ()=>{ activeTab="bad"; tabBad.classList.add("active"); tabAll.classList.remove("active"); renderList(); });
 elSearch.addEventListener("input", renderList);
-
-document.getElementById("btnApplyRange").addEventListener("click", applyBandFromSliders);
-document.getElementById("btnResetFails").addEventListener("click", clearFailsForUser);
-
 document.getElementById("btnResetAwards").addEventListener("click", resetAwardsWithPassword);
 
 fromSlider.addEventListener("input", syncBandUIFromSliders);
 toSlider.addEventListener("input", syncBandUIFromSliders);
 
+// Auto-apply band when the user finishes moving a slider
+fromSlider.addEventListener("change", applyBandFromSliders);
+toSlider.addEventListener("change", applyBandFromSliders);
 document.querySelectorAll(".userBtn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const u = btn.getAttribute("data-user");
@@ -1313,10 +1491,56 @@ function syncBandUIFromSliders(){
   if(isNaN(f)) f = 1;
   if(isNaN(t)) t = 1;
   if(f > t){ t = f; toSlider.value = String(t); }
-  fromVal.textContent = String(f);
-  toVal.textContent = String(t);
+
+  // fromVal / toVal are editable number inputs
+  if(fromVal && fromVal.tagName === "INPUT") fromVal.value = String(f);
+  else if(fromVal) fromVal.textContent = String(f);
+
+  if(toVal && toVal.tagName === "INPUT") toVal.value = String(t);
+  else if(toVal) toVal.textContent = String(t);
+
   rangeLabel.textContent = `${f}–${t}`;
 }
+
+
+(function wireBandNumberInputs(){
+  if(!fromVal || !toVal) return;
+  if(fromVal.tagName !== "INPUT" || toVal.tagName !== "INPUT") return;
+
+  const clampInt = (v, min, max) => {
+    let n = parseInt(v, 10);
+    if(isNaN(n)) n = min;
+    n = Math.max(min, Math.min(max, n));
+    return n;
+  };
+
+  const applyFromInputs = () => {
+    if(!WORDS.length) return;
+    const min = 1;
+    const max = WORDS.length;
+
+    let f = clampInt(fromVal.value, min, max);
+    let t = clampInt(toVal.value, min, max);
+    if(f > t){ t = f; }
+
+    fromSlider.value = String(f);
+    toSlider.value = String(t);
+    syncBandUIFromSliders();
+    applyBandFromSliders();
+  };
+
+  [fromVal, toVal].forEach(el=>{
+    el.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        e.preventDefault();
+        el.blur();
+      }
+    });
+    el.addEventListener("change", applyFromInputs);
+    el.addEventListener("blur", applyFromInputs);
+  });
+})(); 
+
 
 function applyBandFromSliders(){
   if(!currentUser) return;
@@ -1337,8 +1561,7 @@ function applyBandFromSliders(){
   elMarkRow.style.display = "none";
   elPrimaryControls.style.display = "flex";
   elWordBox.textContent = "• • •";
-  setStatus("Band applied");
-  pickNewWord(false);
+pickNewWord(false);
 }
 
 function clearFailsForUser(){
@@ -1348,7 +1571,7 @@ function clearFailsForUser(){
   rebuildDeck();
   updatePills();
   renderList();
-  setStatus("Cleared 👎 list");
+  setStatus("Cleared 💩 list");
 }
 
 function resetAwardsWithPassword(){
@@ -1386,7 +1609,7 @@ function syncModeUI(){
   if(isAll){
     modeHint.textContent = "Practise all words (inside the band).";
   }else{
-    modeHint.textContent = "Practise only 👎 words (inside the band).";
+    modeHint.textContent = "Practise only 💩 words (inside the band).";
   }
 }
 
@@ -1422,6 +1645,10 @@ function syncOrderUI(){
    - orderMode ORDER uses natural index order */
 function rebuildDeck(){
   if(!WORDS.length || !currentUser){ deck = []; return; }
+
+  // Reset navigation history when the deck is rebuilt
+  navBack = [];
+  navForward = [];
 
   const lo = clampInt(band.from - 1, 0, WORDS.length - 1);
   const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
@@ -1469,7 +1696,15 @@ function pickNewWord(autoSpeak){
   if(!currentUser) return;
   closeHelpPanel();
 
-  const idx = drawNextIndex();
+  // If the user previously went back, allow moving forward through history first
+  const hasForward = navForward.length > 0;
+  const idx = hasForward ? navForward.pop() : drawNextIndex();
+
+  if(!hasForward){
+    // New word from the deck: forward history is no longer valid
+    navForward = [];
+  }
+
   if(idx === null){
     if(practiceMode === PRACTICE_MODES.FAILED){
       setStatus("No failed words in this band ✅");
@@ -1482,6 +1717,36 @@ function pickNewWord(autoSpeak){
     return;
   }
 
+  // Save where we came from (so Prev can return)
+  if(currentIndex !== null && currentIndex !== idx){
+    navBack.push(currentIndex);
+  }
+
+  currentIndex = idx;
+  revealed = false;
+
+  elMarkRow.style.display = "none";
+  elPrimaryControls.style.display = "flex";
+  elWordBox.textContent = "• • •";
+  updatePills();
+
+  if(autoSpeak) speakCurrent();
+}
+
+function goPrev(autoSpeak){
+  if(!currentUser) return;
+  closeHelpPanel();
+  if(navBack.length === 0){
+    // Nothing to go back to
+    return;
+  }
+
+  // Save current position so Next can move forward through history
+  if(currentIndex !== null){
+    navForward.push(currentIndex);
+  }
+
+  const idx = navBack.pop();
   currentIndex = idx;
   revealed = false;
 
@@ -1520,6 +1785,216 @@ function speakCurrent(){
 
   window.speechSynthesis.speak(u);
 }
+
+
+/* Mario-style coin "ding" (synth) */
+let coinCtx = null;
+function playCoin(){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+
+    if(!coinCtx) coinCtx = new AudioCtx();
+    if(coinCtx.state === "suspended") coinCtx.resume().catch(()=>{});
+
+    const now = coinCtx.currentTime;
+
+    // Tres notas ascendentes (más "reward")
+    const notes = [
+      { f: 988,  t: 0.00 },  // B5
+      { f: 1319, t: 0.07 },  // E6
+      { f: 1760, t: 0.14 }   // A6
+    ];
+
+    notes.forEach(n => {
+      const o = coinCtx.createOscillator();
+      const g = coinCtx.createGain();
+      const f = coinCtx.createBiquadFilter();
+
+      o.type = "square"; // más retro y brillante
+      o.frequency.setValueAtTime(n.f, now + n.t);
+
+      // Filtro para brillo (menos apagado)
+      f.type = "lowpass";
+      f.frequency.setValueAtTime(6500, now + n.t);
+
+      // Envolvente más larga y audible
+      g.gain.setValueAtTime(0.0001, now + n.t);
+      g.gain.exponentialRampToValueAtTime(0.30, now + n.t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + n.t + 0.25);
+
+      o.connect(f);
+      f.connect(g);
+      g.connect(coinCtx.destination);
+
+      o.start(now + n.t);
+      o.stop(now + n.t + 0.28);
+    });
+
+  }catch(e){
+    // si falla el audio, el juego sigue
+  }
+}
+
+
+function flyCoin(fromEl, toEl){
+  try{
+    if(!fromEl || !toEl) return;
+
+    const a = fromEl.getBoundingClientRect();
+    const b = toEl.getBoundingClientRect();
+
+    const x0 = a.left + a.width * 0.50;
+    const y0 = a.top  + a.height * 0.35;
+
+    const x1 = b.left + b.width * 0.50;
+    const y1 = b.top  + b.height * 0.50;
+
+    const coin = document.createElement("div");
+    coin.className = "coinFly";
+    
+    coin.textContent = "🪙";
+coin.style.left = (x0 - 11) + "px";
+    coin.style.top  = (y0 - 11) + "px";
+    document.body.appendChild(coin);
+
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
+    const cx = x0 + dx * 0.5;
+    const cy = Math.min(y0, y1) - lift;
+
+    const anim = coin.animate([
+      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
+      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.18)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.55)`, opacity: 0.0, offset: 1 }
+    ], {
+      duration: 1400,
+      easing: "cubic-bezier(.15,.9,.25,1)"
+    });
+
+    anim.onfinish = () => coin.remove();
+  }catch(e){
+    // ignore
+  }
+}
+
+
+function flyPoop(fromEl, toEl){
+  try{
+    if(!fromEl || !toEl) return;
+
+    const a = fromEl.getBoundingClientRect();
+    const b = toEl.getBoundingClientRect();
+
+    const x0 = a.left + a.width * 0.50;
+    const y0 = a.top  + a.height * 0.35;
+
+    const x1 = b.left + b.width * 0.50;
+    const y1 = b.top  + b.height * 0.50;
+
+    const poop = document.createElement("div");
+    poop.className = "poopFly";
+    poop.textContent = "💩";
+    poop.style.left = (x0 - 14) + "px";
+    poop.style.top  = (y0 - 14) + "px";
+    document.body.appendChild(poop);
+
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const lift = Math.min(160, Math.max(70, Math.hypot(dx, dy) * 0.28));
+    const cx = x0 + dx * 0.5;
+    const cy = Math.min(y0, y1) - lift;
+
+    const anim = poop.animate([
+      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
+      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.1) rotate(20deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.6) rotate(0deg)`, opacity: 0.0, offset: 1 }
+    ], {
+      duration: 850,
+      easing: "cubic-bezier(.25,.85,.3,1)"
+    });
+
+    anim.onfinish = () => poop.remove();
+  }catch(e){
+    // ignore
+  }
+}
+
+
+
+
+
+function popGoodPill(){
+  if(!elGoodPill) return;
+  elGoodPill.classList.remove("pillPop");
+  // Force reflow so animation retriggers
+  void elGoodPill.offsetWidth;
+  elGoodPill.classList.add("pillPop");
+}
+
+
+function popHardPill(){
+  if(!elHardPill) return;
+  elHardPill.classList.remove("pillPop");
+  void elHardPill.offsetWidth;
+  elHardPill.classList.add("pillPop");
+}
+
+/* Short defeat sound (synth) */
+let failCtx = null;
+function playFail(){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+
+    if(!failCtx) failCtx = new AudioCtx();
+    if(failCtx.state === "suspended") failCtx.resume().catch(()=>{});
+
+    const now = failCtx.currentTime;
+
+    // Main downward chirp
+    const o = failCtx.createOscillator();
+    const g = failCtx.createGain();
+    const lp = failCtx.createBiquadFilter();
+
+    o.type = "triangle";
+    o.frequency.setValueAtTime(520, now);
+    o.frequency.exponentialRampToValueAtTime(160, now + 0.18);
+
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(1800, now);
+
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+    o.connect(lp);
+    lp.connect(g);
+    g.connect(failCtx.destination);
+
+    o.start(now);
+    o.stop(now + 0.24);
+
+    // Small "thud" layer
+    const o2 = failCtx.createOscillator();
+    const g2 = failCtx.createGain();
+    o2.type = "square";
+    o2.frequency.setValueAtTime(110, now);
+    g2.gain.setValueAtTime(0.0001, now);
+    g2.gain.exponentialRampToValueAtTime(0.10, now + 0.008);
+    g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    o2.connect(g2);
+    g2.connect(failCtx.destination);
+    o2.start(now);
+    o2.stop(now + 0.09);
+
+  }catch(e){
+    // ignore
+  }
+}
+
+
 
 function speakText(text, onEnd){
   if(!text) return;
@@ -1594,6 +2069,7 @@ function revealWordLetterByLetter(){
   revealed = true;
   elPrimaryControls.style.display = "none";
   elMarkRow.style.display = "flex";
+  //elMarkRow.style.display = "none";
 
   if(revealTimer) clearInterval(revealTimer);
 
@@ -1609,10 +2085,11 @@ function revealWordLetterByLetter(){
     if(i >= letters.length){
       clearInterval(revealTimer);
       revealTimer = null;
-      setStatus("Mark it 👍 / 👎");
+      //setStatus("Mark it 🪙 / 💩");
     }
   }, 140);
 }
+
 
 function markWord(gotIt){
   if(!revealed) return;
@@ -1620,15 +2097,25 @@ function markWord(gotIt){
   if(!w || !currentUser) return;
 
   if(gotIt){
+    // Success feedback
+    popGoodPill();
+    playCoin();
+    flyCoin(document.getElementById("btnUp"), document.getElementById("goodPill"));
+
     if(hardSet.has(w)){
       hardSet.delete(w);
       saveHardWords(currentUser, [...hardSet]);
     }
-    setStatus("Nice! ✅");
+    //setStatus("Nice! ✅");
   } else {
+    // Fail feedback
+    popHardPill();
+    playFail();
+    flyPoop(document.getElementById("btnDown"), document.getElementById("hardPill"));
+
     hardSet.add(w);
     saveHardWords(currentUser, [...hardSet]);
-    setStatus("Saved to practise 📌");
+    //setStatus("Saved to practise 📌");
   }
 
   // Stats + awards (per user)
@@ -1644,6 +2131,7 @@ function markWord(gotIt){
   checkAwardsAndCelebrate();
 
   updatePills();
+  setStatus("Ready");
 
   setTimeout(()=>{
     revealed = false;
@@ -1689,7 +2177,7 @@ function renderList(){
 
   const title = activeTab === "all"
     ? `All words in band (${hi-lo+1})`
-    : `Failed (👎) in band (${list.length})`;
+    : `Failed (💩) in band (${list.length})`;
 
   if(list.length === 0){
     elListBox.innerHTML = `<b>${title}</b><br><br>` + (activeTab === "bad" ? "Empty ✅" : "No match.");
@@ -1699,9 +2187,9 @@ function renderList(){
   elListBox.innerHTML =
     `<b>${title}</b><br><br>` +
     list.map(x => `
-      <div class="listItem">
+      <div class="listItem" data-w="${encodeURIComponent(x.w)}" title="Tap to hear pronunciation">
         <div>${x.n}. ${escapeHtml(x.w)}</div>
-        <div>${x.failed ? `<span class="tagBad">👎</span>` : `<span class="tagOk">✓</span>`}</div>
+        <div>${x.failed ? `<span class="tagBad">💩</span>` : `<span class="tagOk">✓</span>`}</div>
       </div>
     `).join("");
 }
@@ -1709,17 +2197,19 @@ function renderList(){
 function updatePills(){
   if(!currentUser){
     elRangePill.textContent = `Range: —`;
-    elHardPill.textContent = `👎 To practise: 0`;
+    elHardPill.textContent = `💩 To practise: 0`;
     return;
   }
-  elRangePill.textContent = `Range: ${band.from}–${band.to}`;
+  elRangePill.textContent = `${band.from}–${band.to}`;
 
   const lo = clampInt(band.from - 1, 0, WORDS.length - 1);
   const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
   let failedInBand = 0;
   for(let i=lo;i<=hi;i++) if(hardSet.has(WORDS[i])) failedInBand++;
-  elHardPill.textContent = `👎 To practise: ${failedInBand}`;
+  elHardPill.textContent = `💩 ${failedInBand}`;
   rangeLabel.textContent = `${band.from}–${band.to}`;
+  // 🪙 correct counter
+  if(elGoodPill){ elGoodPill.textContent = `🪙 ${stats && stats.correct ? stats.correct : 0}`; }
 }
 
 /* Storage keys (per user) */
@@ -1776,9 +2266,9 @@ function loadOrderMode(user){
   try{
     const raw = localStorage.getItem(keyOrder(user));
     if(raw === ORDER_MODES.ORDER) return ORDER_MODES.ORDER;
-    return ORDER_MODES.ORDER;
+    return ORDER_MODES.RANDOM;
   }catch{
-    return ORDER_MODES.ORDER;
+    return ORDER_MODES.RANDOM;
   }
 }
 // NEW
@@ -1787,7 +2277,7 @@ function saveOrderMode(user, mode){
 }
 
 /* Utils */
-function setStatus(t){ elStatus.textContent = t; }
+function setStatus(){ /* status pill removed */ }
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
