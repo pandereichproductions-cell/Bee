@@ -402,7 +402,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:28px;
+      font-size: 36px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
@@ -575,12 +575,12 @@ main > section.card{
 .coinFly{
   position: fixed;
   z-index: 9999;
-  width: 32px;
-  height: 32px;
+  width: 52px;
+  height: 52px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 24px;
+  font-size: 48px;
   pointer-events: none;
   filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));
 }
@@ -589,20 +589,90 @@ main > section.card{
 .poopFly{
   position: fixed;
   z-index: 9999;
-  width: 32px;
-  height: 32px;
+  width: 52px;
+  height: 52px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 28px;
+  font-size: 48px;
   pointer-events: none;
   filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));
+}
+
+
+/* Stats pills: big emoji + number underneath */
+.statPill{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 12px;
+  min-width: 74px;
+}
+.statPill .statIcon{
+  font-size: 52px;
+  line-height: 1;
+}
+.statPill .statNum{
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+
+/* Hide pill chrome, keep icon + number */
+.statPill{
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 4px 6px !important;
+}
+
+
+/* Combo banner */
+#comboBanner{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(20,20,20,0.9);
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-align: center;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  font-weight: 800;
+}
+#comboBanner.show{
+  animation: comboPop 2600ms ease-out forwards;
+}
+#comboBanner .line1{ font-size: 22px; }
+#comboBanner .line2{ font-size: 18px; margin-top: 4px; }
+#comboBanner .line3{ font-size: 20px; margin-top: 6px; color: var(--accent); }
+
+
+@keyframes comboPop{
+  0%{ opacity:0; transform: translateX(-50%) scale(0.7); }
+  15%{ opacity:1; transform: translateX(-50%) scale(1.08); }
+  25%{ opacity:1; transform: translateX(-50%) scale(1); }
+  85%{ opacity:1; transform: translateX(-50%) scale(1); }
+  100%{ opacity:0; transform: translateX(-50%) scale(0.98); }
+}
+20%{ opacity:1; transform: translateX(-50%) scale(1.08); }
+  60%{ opacity:1; transform: translateX(-50%) scale(1); }
+  100%{ opacity:0; transform: translateX(-50%) scale(0.95); }
 }
 
 </style>
 </head>
 
 <body>
+<div id="comboBanner"></div>
+
   <div class="app">
     <header>
       <div class="left">
@@ -621,8 +691,8 @@ main > section.card{
         
 <div class="row rowTop">
       <div id="statsPills">
-<div class="pill" id="goodPill">🪙 0</div>
-      <div class="pill" id="hardPill">💩 To practise: 0</div>
+<div class="pill statPill" id="goodPill">🪙 0</div>
+      <div class="pill statPill" id="hardPill">💩 0</div>
 </div>
 </div>
 
@@ -1233,6 +1303,7 @@ function checkAwardsAndCelebrate(){
     renderAwards();
     if(lastUnlocked) popAward(lastUnlocked);
     launchConfetti();
+	playRewardCelebration();
   }
 }
 
@@ -1454,7 +1525,13 @@ function selectUser(userKey){
   orderMode = loadOrderMode(userKey);
 
   stats = loadStats(userKey);
-  renderAwards();
+  
+  // Reset streak for this session
+  stats.streak = 0;
+  lastCombo5At = 0;
+  lastCombo10At = 0;
+  saveStats(currentUser, stats);
+renderAwards();
 
   band.from = clampInt(band.from, 1, Math.max(1, WORDS.length));
   band.to   = clampInt(band.to, band.from, Math.max(1, WORDS.length));
@@ -1576,17 +1653,36 @@ function clearFailsForUser(){
 
 function resetAwardsWithPassword(){
   if(!currentUser) return;
+
   const pw = prompt('Contraseña para reiniciar premios');
   if(pw !== 'papa'){
     setStatus('Contraseña incorrecta');
     return;
   }
-  // reset only awards/progress (not failed words)
-  stats = { correct:0, wrong:0, streak:0, unlocked:{} };
+
+  // 🔥 Reset stats (coins, poops, streak)
+  stats = {
+    correct: 0,   // 🪙
+    wrong: 0,     // 💩
+    streak: 0,
+    unlocked: {}
+  };
   saveStats(currentUser, stats);
+
+  // 🔥 Reset failed words (💩 list)
+  hardSet.clear();
+  saveHardWords(currentUser, []);
+
+  // 🔥 Reset combo trackers
+  lastCombo5At = 0;
+  lastCombo10At = 0;
+
+  // UI refresh
   renderAwards();
+  updatePills();
   setStatus('Premios reiniciados');
 }
+
 
 
 function setPracticeMode(mode){
@@ -1786,9 +1882,93 @@ function speakCurrent(){
   window.speechSynthesis.speak(u);
 }
 
+let rewardCtx = null;
+
+function playRewardCelebration(){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+
+    if(!rewardCtx) rewardCtx = new AudioCtx();
+    if(rewardCtx.state === "suspended") rewardCtx.resume().catch(()=>{});
+
+    const now = rewardCtx.currentTime;
+
+    /* 🎶 Victory jingle */
+	const notes = [
+	  { f: 880,  t: 0.00 },
+	  { f: 1175, t: 0.20 },
+	  { f: 1568, t: 0.42 },
+	  { f: 1760, t: 0.64 } // (opcional) 4ª nota para más “final”
+	];
+
+
+    notes.forEach(n=>{
+      const o = rewardCtx.createOscillator();
+      const g = rewardCtx.createGain();
+
+      o.type = "triangle";
+      o.frequency.setValueAtTime(n.f, now + n.t);
+
+      g.gain.setValueAtTime(0.0001, now + n.t);
+      g.gain.exponentialRampToValueAtTime(0.25, now + n.t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + n.t + 0.48);
+
+      o.connect(g);
+      g.connect(rewardCtx.destination);
+
+      o.start(now + n.t);
+      o.stop(now + n.t + 0.5);
+    });
+
+	/* 👏 Synthetic applause */
+	const applauseDur = 2.0; // <-- SUBE ESTO (1.6, 2.0, 2.5...)
+
+	const noiseBuffer = rewardCtx.createBuffer(
+	  1,
+	  Math.floor(rewardCtx.sampleRate * applauseDur),
+	  rewardCtx.sampleRate
+	);
+
+	const data = noiseBuffer.getChannelData(0);
+	for(let i=0;i<data.length;i++){
+	  // misma curva pero adaptada a la nueva duración
+	  data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+	}
+
+	const noise = rewardCtx.createBufferSource();
+	noise.buffer = noiseBuffer;
+
+	const bp = rewardCtx.createBiquadFilter();
+	bp.type = "bandpass";
+	bp.frequency.value = 1400;
+	bp.Q.value = 0.8;
+
+	const ng = rewardCtx.createGain();
+	ng.gain.setValueAtTime(0.0001, now + 0.05);
+	ng.gain.exponentialRampToValueAtTime(0.18, now + 0.08);
+	ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.05 + applauseDur); // <-- antes 0.8
+
+	noise.connect(bp);
+	bp.connect(ng);
+	ng.connect(rewardCtx.destination);
+
+	noise.start(now + 0.05);
+	noise.stop(now + 0.05 + applauseDur + 0.1); // <-- antes 0.9
+
+
+  }catch(e){
+    // sin audio, pero el confeti sigue
+  }
+}
 
 /* Mario-style coin "ding" (synth) */
 let coinCtx = null;
+
+/* Session-only combo trackers (avoid re-triggering at the same milestone) */
+let lastCombo5At = 0;
+let lastCombo10At = 0;
+
 function playCoin(){
   try{
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1878,6 +2058,95 @@ coin.style.left = (x0 - 11) + "px";
     // ignore
   }
 }
+
+
+function flyCoinXY(x0, y0, x1, y1){
+  try{
+    const coin = document.createElement("div");
+    coin.className = "coinFly";
+    coin.textContent = "🪙";
+    coin.style.left = (x0 - 14) + "px";
+    coin.style.top  = (y0 - 14) + "px";
+    document.body.appendChild(coin);
+
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
+    const cx = x0 + dx * 0.5;
+    const cy = Math.min(y0, y1) - lift;
+
+    const anim = coin.animate([
+      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
+      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.18)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.55)`, opacity: 0.0, offset: 1 }
+    ], {
+      duration: 1400,
+      easing: "cubic-bezier(.15,.9,.25,1)"
+    });
+    anim.onfinish = () => coin.remove();
+  }catch(e){}
+}
+
+
+
+function flyCoinCombo(n, intervalMs){
+  const fromEl = document.getElementById("btnUp");
+  const toEl = document.getElementById("goodPill");
+  const count = Math.max(1, n|0);
+  const step = Math.max(0, intervalMs|0);
+
+  if(!fromEl || !toEl){
+    // Fallback: still play sounds
+    for(let i=0;i<count;i++) setTimeout(()=>playCoin(), i*step);
+    return;
+  }
+
+  // Snapshot positions NOW (before UI hides buttons), so late coins still launch from the button
+  const a = fromEl.getBoundingClientRect();
+  const b = toEl.getBoundingClientRect();
+
+  const x0 = a.left + a.width * 0.50;
+  const y0 = a.top  + a.height * 0.35;
+  const x1 = b.left + b.width * 0.50;
+  const y1 = b.top  + b.height * 0.50;
+
+  for(let i=0;i<count;i++){
+    setTimeout(()=>{
+      playCoin();
+      flyCoinXY(x0, y0, x1, y1);
+    }, i*step);
+  }
+}
+
+
+function showComboBanner(type){
+  const el = document.getElementById("comboBanner");
+  if(!el) return;
+
+  if(type === 5){
+    el.innerHTML = `
+      <div class="line1">Great job!</div>
+      <div class="line2">5 in a row!</div>
+      <div class="line3">+3 Coins Bonus</div>`;
+  } else if(type === 10){
+    el.innerHTML = `
+      <div class="line1">Amazing! ⭐</div>
+      <div class="line2">10 in a row!</div>
+      <div class="line3">+5 Coins Bonus</div>`;
+  } else {
+    return;
+  }
+
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+}
+
+
+
+
+
+
 
 
 function flyPoop(fromEl, toEl){
@@ -2099,10 +2368,7 @@ function markWord(gotIt){
   if(gotIt){
     // Success feedback
     popGoodPill();
-    playCoin();
-    flyCoin(document.getElementById("btnUp"), document.getElementById("goodPill"));
-
-    if(hardSet.has(w)){
+if(hardSet.has(w)){
       hardSet.delete(w);
       saveHardWords(currentUser, [...hardSet]);
     }
@@ -2119,12 +2385,41 @@ function markWord(gotIt){
   }
 
   // Stats + awards (per user)
+  // Normalize stats fields (avoid NaN streak)
+  stats.correct = Number(stats.correct) || 0;
+  stats.wrong   = Number(stats.wrong) || 0;
+  stats.streak  = Number(stats.streak) || 0;
+
   if(gotIt){
-    stats.correct++;
     stats.streak++;
-  }else{
+// Coin combos: trigger at 5,15,25... (3 coins) and 10,20,30... (5 coins)
+// Never mix: 10-milestones take priority over 5-milestones.
+let comboN = 1;
+let intervalMs = 0;
+
+if(stats.streak % 10 === 0 && stats.streak !== lastCombo10At){
+  comboN = 5;
+  intervalMs = 160;
+  lastCombo10At = stats.streak;
+
+      showComboBanner(10);
+} else if(stats.streak % 5 === 0 && stats.streak !== lastCombo5At){
+  comboN = 3;
+  intervalMs = 180;
+  lastCombo5At = stats.streak;
+
+      showComboBanner(5);
+}
+
+flyCoinCombo(comboN, intervalMs);
+
+    // Add coins to the counter (1 normally, 3 at 5-milestone, 5 at 10-milestone)
+    stats.correct += comboN;
+}else{
     stats.wrong++;
     stats.streak = 0;
+    lastCombo5At = 0;
+    lastCombo10At = 0;
   }
   saveStats(currentUser, stats);
   renderAwards();
@@ -2197,7 +2492,7 @@ function renderList(){
 function updatePills(){
   if(!currentUser){
     elRangePill.textContent = `Range: —`;
-    elHardPill.textContent = `💩 To practise: 0`;
+    elHardPill.innerHTML = `<div class="statIcon">💩</div><div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
     return;
   }
   elRangePill.textContent = `${band.from}–${band.to}`;
@@ -2206,10 +2501,10 @@ function updatePills(){
   const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
   let failedInBand = 0;
   for(let i=lo;i<=hi;i++) if(hardSet.has(WORDS[i])) failedInBand++;
-  elHardPill.textContent = `💩 ${failedInBand}`;
+  elHardPill.innerHTML = `<div class="statIcon">💩</div><div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
   rangeLabel.textContent = `${band.from}–${band.to}`;
   // 🪙 correct counter
-  if(elGoodPill){ elGoodPill.textContent = `🪙 ${stats && stats.correct ? stats.correct : 0}`; }
+  if(elGoodPill){ elGoodPill.innerHTML = `<div class="statIcon">🪙</div><div class="statNum">${(stats && stats.correct) ? stats.correct : 0}</div>`; }
 }
 
 /* Storage keys (per user) */
