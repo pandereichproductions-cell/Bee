@@ -1473,7 +1473,7 @@ backdrop.addEventListener("click", (e)=>{ if(e.target === backdrop) closeMenu();
 tabAll.addEventListener("click", ()=>{ activeTab="all"; tabAll.classList.add("active"); tabBad.classList.remove("active"); renderList(); });
 tabBad.addEventListener("click", ()=>{ activeTab="bad"; tabBad.classList.add("active"); tabAll.classList.remove("active"); renderList(); });
 elSearch.addEventListener("input", renderList);
-document.getElementById("btnResetAwards").addEventListener("click", resetAwardsWithPassword);
+document.getElementById("btnResetAwards").addEventListener("click", adminAwardsWithPassword);
 
 fromSlider.addEventListener("input", syncBandUIFromSliders);
 toSlider.addEventListener("input", syncBandUIFromSliders);
@@ -1651,38 +1651,225 @@ function clearFailsForUser(){
   setStatus("Cleared 💩 list");
 }
 
-function resetAwardsWithPassword(){
+function buildUnlockedFromLevel(level){
+  // level: 0..AWARDS.length  (0 = ninguno, 1 = bronze, 2 = silver, ...)
+  const unlocked = {};
+  for(let i=0; i<AWARDS.length; i++){
+    unlocked[AWARDS[i].id] = (i < level);
+  }
+  return unlocked;
+}
+
+function clampNonNegInt(v){
+  let n = parseInt(v, 10);
+  if(isNaN(n)) n = 0;
+  if(n < 0) n = 0;
+  return n;
+}
+
+function adminAwardsWithPassword(){
   if(!currentUser) return;
 
-  const pw = prompt('Contraseña para reiniciar premios');
-  if(pw !== 'papa'){
-    setStatus('Contraseña incorrecta');
+  const pw = prompt("Admin password:");
+  if(pw !== "papa"){
+    setStatus("Wrong password");
     return;
   }
 
-  // 🔥 Reset stats (coins, poops, streak)
-  stats = {
-    correct: 0,   // 🪙
-    wrong: 0,     // 💩
-    streak: 0,
-    unlocked: {}
-  };
-  saveStats(currentUser, stats);
+  const choice = prompt(
+`ADMIN:
+1 = Reset ALL to 0
+2 = Set custom values
+(Press Cancel to abort)`
+  );
+  if(choice === null) return;
 
-  // 🔥 Reset failed words (💩 list)
-  hardSet.clear();
-  saveHardWords(currentUser, []);
+  const c = String(choice).trim();
 
-  // 🔥 Reset combo trackers
-  lastCombo5At = 0;
-  lastCombo10At = 0;
+  if(c === "1"){
+    // Full reset
+    stats = { correct:0, wrong:0, streak:0, unlocked:{} };
+    saveStats(currentUser, stats);
 
-  // UI refresh
-  renderAwards();
-  updatePills();
-  setStatus('Premios reiniciados');
+    // Also reset failed words (optional: keep as current behavior)
+    hardSet.clear();
+    saveHardWords(currentUser, []);
+
+    lastCombo5At = 0;
+    lastCombo10At = 0;
+
+    renderAwards();
+    updatePills();
+    setStatus("Admin: reset done");
+    return;
+  }
+
+  if(c === "2"){
+    // Set custom values
+    const newCoins = clampNonNegInt(prompt("Set 🪙 coins (correct answers):", String(stats.correct || 0)));
+    const newPoops = clampNonNegInt(prompt("Set 💩 poops (wrong answers):", String(stats.wrong || 0)));
+
+    // Premios: nivel 0..5 (según AWARDS)
+    const maxLevel = AWARDS.length;
+    const levelDefault = (() => {
+      // intenta inferir nivel actual desde stats.unlocked
+      let lvl = 0;
+      for(let i=0;i<AWARDS.length;i++){
+        if(stats.unlocked && stats.unlocked[AWARDS[i].id]) lvl = i+1;
+      }
+      return lvl;
+    })();
+
+    let newLevel = prompt(
+`Set awards level:
+0 = none
+1 = Bronze
+2 = Silver
+3 = Gold
+4 = Trophy
+5 = Crown`,
+String(levelDefault)
+    );
+    if(newLevel === null) return;
+    newLevel = clampNonNegInt(newLevel);
+    if(newLevel > maxLevel) newLevel = maxLevel;
+
+    const clearFails = prompt("Clear 💩 failed-words list too? (y/n)", "n");
+    const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
+
+    stats.correct = newCoins;
+    stats.wrong = newPoops;
+    stats.streak = 0;            // por seguridad: evitar combos raros después de tocar stats
+    stats.unlocked = buildUnlockedFromLevel(newLevel);
+
+    saveStats(currentUser, stats);
+
+    if(doClearFails){
+      hardSet.clear();
+      saveHardWords(currentUser, []);
+    }
+
+    lastCombo5At = 0;
+    lastCombo10At = 0;
+
+    renderAwards();
+    updatePills();
+    setStatus(`Admin: set 🪙${newCoins} 💩${newPoops} awards:${newLevel}/${maxLevel}`);
+    return;
+  }
+
+  setStatus("Admin: cancelled");
 }
 
+function buildUnlockedFromLevel(level){
+  // level: 0..AWARDS.length  (0 = ninguno, 1 = bronze, 2 = silver, ...)
+  const unlocked = {};
+  for(let i=0; i<AWARDS.length; i++){
+    unlocked[AWARDS[i].id] = (i < level);
+  }
+  return unlocked;
+}
+
+function clampNonNegInt(v){
+  let n = parseInt(v, 10);
+  if(isNaN(n)) n = 0;
+  if(n < 0) n = 0;
+  return n;
+}
+
+function adminAwardsWithPassword(){
+  if(!currentUser) return;
+
+  const pw = prompt("Admin password:");
+  if(pw !== "papa"){
+    setStatus("Wrong password");
+    return;
+  }
+
+  const choice = prompt(
+`ADMIN:
+1 = Reset ALL to 0
+2 = Set custom values
+(Press Cancel to abort)`
+  );
+  if(choice === null) return;
+
+  const c = String(choice).trim();
+
+  if(c === "1"){
+    // Full reset
+    stats = { correct:0, wrong:0, streak:0, unlocked:{} };
+    saveStats(currentUser, stats);
+
+    // Also reset failed words (optional: keep as current behavior)
+    hardSet.clear();
+    saveHardWords(currentUser, []);
+
+    lastCombo5At = 0;
+    lastCombo10At = 0;
+
+    renderAwards();
+    updatePills();
+    setStatus("Admin: reset done");
+    return;
+  }
+
+  if(c === "2"){
+    // Set custom values
+    const newCoins = clampNonNegInt(prompt("Set 🪙 coins (correct answers):", String(stats.correct || 0)));
+    const newPoops = clampNonNegInt(prompt("Set 💩 poops (wrong answers):", String(stats.wrong || 0)));
+
+    // Premios: nivel 0..5 (según AWARDS)
+    const maxLevel = AWARDS.length;
+    const levelDefault = (() => {
+      // intenta inferir nivel actual desde stats.unlocked
+      let lvl = 0;
+      for(let i=0;i<AWARDS.length;i++){
+        if(stats.unlocked && stats.unlocked[AWARDS[i].id]) lvl = i+1;
+      }
+      return lvl;
+    })();
+
+    let newLevel = prompt(
+`Set awards level:
+0 = none
+1 = Bronze
+2 = Silver
+3 = Gold
+4 = Trophy
+5 = Crown`,
+String(levelDefault)
+    );
+    if(newLevel === null) return;
+    newLevel = clampNonNegInt(newLevel);
+    if(newLevel > maxLevel) newLevel = maxLevel;
+
+    const clearFails = prompt("Clear 💩 failed-words list too? (y/n)", "n");
+    const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
+
+    stats.correct = newCoins;
+    stats.wrong = newPoops;
+    stats.streak = 0;            // por seguridad: evitar combos raros después de tocar stats
+    stats.unlocked = buildUnlockedFromLevel(newLevel);
+
+    saveStats(currentUser, stats);
+
+    if(doClearFails){
+      hardSet.clear();
+      saveHardWords(currentUser, []);
+    }
+
+    lastCombo5At = 0;
+    lastCombo10At = 0;
+
+    renderAwards();
+    updatePills();
+    setStatus(`Admin: set 🪙${newCoins} 💩${newPoops} awards:${newLevel}/${maxLevel}`);
+    return;
+  }
+
+  setStatus("Admin: cancelled");
+}
 
 
 function setPracticeMode(mode){
@@ -2000,7 +2187,7 @@ function playCoin(){
 
       // Envolvente más larga y audible
       g.gain.setValueAtTime(0.0001, now + n.t);
-      g.gain.exponentialRampToValueAtTime(0.30, now + n.t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.15, now + n.t + 0.015);
       g.gain.exponentialRampToValueAtTime(0.0001, now + n.t + 0.25);
 
       o.connect(f);
@@ -2017,25 +2204,20 @@ function playCoin(){
 }
 
 
-function flyCoin(fromEl, toEl){
+function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = 52){
   try{
-    if(!fromEl || !toEl) return;
-
-    const a = fromEl.getBoundingClientRect();
-    const b = toEl.getBoundingClientRect();
-
-    const x0 = a.left + a.width * 0.50;
-    const y0 = a.top  + a.height * 0.35;
-
-    const x1 = b.left + b.width * 0.50;
-    const y1 = b.top  + b.height * 0.50;
-
     const coin = document.createElement("div");
     coin.className = "coinFly";
-    
     coin.textContent = "🪙";
-coin.style.left = (x0 - 11) + "px";
-    coin.style.top  = (y0 - 11) + "px";
+
+    // centrar el emoji (usa el tamaño inicial)
+    const half = startSizePx / 2;
+    coin.style.left = (x0 - half) + "px";
+    coin.style.top  = (y0 - half) + "px";
+    coin.style.width = startSizePx + "px";
+    coin.style.height = startSizePx + "px";
+    coin.style.fontSize = startSizePx + "px";
+
     document.body.appendChild(coin);
 
     const dx = x1 - x0;
@@ -2044,76 +2226,60 @@ coin.style.left = (x0 - 11) + "px";
     const cx = x0 + dx * 0.5;
     const cy = Math.min(y0, y1) - lift;
 
+    // escala final = tamaño del icono destino / tamaño inicial
+    const endScale = Math.max(0.2, endSizePx / startSizePx);
+
     const anim = coin.animate([
       { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
       { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.18)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.55)`, opacity: 0.0, offset: 1 }
+      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(${endScale})`, opacity: 0.0, offset: 1 }
     ], {
       duration: 1400,
       easing: "cubic-bezier(.15,.9,.25,1)"
     });
 
-    anim.onfinish = () => coin.remove();
-  }catch(e){
-    // ignore
-  }
-}
-
-
-function flyCoinXY(x0, y0, x1, y1){
-  try{
-    const coin = document.createElement("div");
-    coin.className = "coinFly";
-    coin.textContent = "🪙";
-    coin.style.left = (x0 - 14) + "px";
-    coin.style.top  = (y0 - 14) + "px";
-    document.body.appendChild(coin);
-
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
-    const cx = x0 + dx * 0.5;
-    const cy = Math.min(y0, y1) - lift;
-
-    const anim = coin.animate([
-      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
-      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.18)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.55)`, opacity: 0.0, offset: 1 }
-    ], {
-      duration: 1400,
-      easing: "cubic-bezier(.15,.9,.25,1)"
-    });
     anim.onfinish = () => coin.remove();
   }catch(e){}
 }
 
 
-
 function flyCoinCombo(n, intervalMs){
   const fromEl = document.getElementById("btnUp");
-  const toEl = document.getElementById("goodPill");
+  const toPill = document.getElementById("goodPill");
+  const toEl = toPill ? (toPill.querySelector(".statIcon") || toPill) : null;
+
   const count = Math.max(1, n|0);
   const step = Math.max(0, intervalMs|0);
 
   if(!fromEl || !toEl){
-    // Fallback: still play sounds
     for(let i=0;i<count;i++) setTimeout(()=>playCoin(), i*step);
     return;
   }
 
-  // Snapshot positions NOW (before UI hides buttons), so late coins still launch from the button
   const a = fromEl.getBoundingClientRect();
   const b = toEl.getBoundingClientRect();
 
-  const x0 = a.left + a.width * 0.50;
-  const y0 = a.top  + a.height * 0.35;
-  const x1 = b.left + b.width * 0.50;
-  const y1 = b.top  + b.height * 0.50;
+  const vv = window.visualViewport;
+  const ox = vv ? (vv.offsetLeft || 0) : 0;
+  const oy = vv ? (vv.offsetTop  || 0) : 0;
+
+  const x0 = a.left + a.width * 0.50 + ox;
+  const y0 = a.top  + a.height * 0.35 + oy;
+
+  const x1 = b.left + b.width  * 0.50 + ox;
+  const y1 = b.top  + b.height * 0.50 + oy;
+
+  const endSize = (() => {
+    try{
+      const fs = parseFloat(getComputedStyle(toEl).fontSize);
+      return isNaN(fs) ? 52 : fs;
+    }catch{ return 52; }
+  })();
 
   for(let i=0;i<count;i++){
     setTimeout(()=>{
       playCoin();
-      flyCoinXY(x0, y0, x1, y1);
+      flyCoinXY(x0, y0, x1, y1, 48, endSize);
     }, i*step);
   }
 }
@@ -2143,12 +2309,6 @@ function showComboBanner(type){
 }
 
 
-
-
-
-
-
-
 function flyPoop(fromEl, toEl){
   try{
     if(!fromEl || !toEl) return;
@@ -2156,17 +2316,24 @@ function flyPoop(fromEl, toEl){
     const a = fromEl.getBoundingClientRect();
     const b = toEl.getBoundingClientRect();
 
-    const x0 = a.left + a.width * 0.50;
-    const y0 = a.top  + a.height * 0.35;
+    const vv = window.visualViewport;
+    const ox = vv ? (vv.offsetLeft || 0) : 0;
+    const oy = vv ? (vv.offsetTop  || 0) : 0;
 
-    const x1 = b.left + b.width * 0.50;
-    const y1 = b.top  + b.height * 0.50;
+    const x0 = a.left + a.width  * 0.50 + ox;
+    const y0 = a.top  + a.height * 0.35 + oy;
+
+    const x1 = b.left + b.width  * 0.50 + ox;
+    const y1 = b.top  + b.height * 0.50 + oy;
 
     const poop = document.createElement("div");
     poop.className = "poopFly";
     poop.textContent = "💩";
-    poop.style.left = (x0 - 14) + "px";
-    poop.style.top  = (y0 - 14) + "px";
+
+    // Centro exacto (sin -14)
+    poop.style.left = x0 + "px";
+    poop.style.top  = y0 + "px";
+
     document.body.appendChild(poop);
 
     const dx = x1 - x0;
@@ -2176,20 +2343,17 @@ function flyPoop(fromEl, toEl){
     const cy = Math.min(y0, y1) - lift;
 
     const anim = poop.animate([
-      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
-      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.1) rotate(20deg)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.6) rotate(0deg)`, opacity: 0.0, offset: 1 }
+      { transform: "translate(-50%,-50%) translate(0,0) scale(1)", opacity: 1, offset: 0 },
+      { transform: `translate(-50%,-50%) translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.1) rotate(20deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(-50%,-50%) translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.6) rotate(0deg)`, opacity: 0.0, offset: 1 }
     ], {
       duration: 850,
       easing: "cubic-bezier(.25,.85,.3,1)"
     });
 
     anim.onfinish = () => poop.remove();
-  }catch(e){
-    // ignore
-  }
+  }catch(e){}
 }
-
 
 
 
@@ -2235,7 +2399,7 @@ function playFail(){
     lp.frequency.setValueAtTime(1800, now);
 
     g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.40, now + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
 
     o.connect(lp);
