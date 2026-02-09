@@ -1784,7 +1784,11 @@ function selectUser(userKey){
   if(!USERS[userKey]) return;
   currentUser = userKey;
 
-  hardSet = new Set(loadHardWords(userKey));
+  
+
+  // 🔊 Welcome intro (must be triggered by the user click/tap for iOS)
+  playWelcomeIntro();
+hardSet = new Set(loadHardWords(userKey));
   band = loadBand(userKey);
   practiceMode = loadPracticeMode(userKey);
   orderMode = loadOrderMode(userKey);
@@ -2324,20 +2328,48 @@ const MP3_PRIMARY_ENABLED = true;
 
 // You can rename these as you like, just keep them in /audio/
 const MP3_URLS = [
-  // ✅ Local relative (file://) + Web relative
+  // Prefer CBR (stable seeking), fallback to original
   "audio/bee_words_CBR.mp3",
   "audio/bee_words.mp3",
 
-  // ✅ Web absolute (solo http/https)
+  // Absolute paths for web hosting
   "/audio/bee_words_CBR.mp3",
   "/audio/bee_words.mp3",
 
-  // ✅ GitHub Pages subpath fallback
+  // GitHub Pages subpath fallback
   "main/audio/bee_words_CBR.mp3",
   "main/audio/bee_words.mp3",
   "/main/audio/bee_words_CBR.mp3",
-  "/main/audio/bee_words.mp3",
+  "/main/audio/bee_words.mp3"
 ];
+
+// Welcome intro MP3 (played when user selects their profile)
+const INTRO_WELCOME_SRC = "audio/intro_spelling.mp3";
+let introAudioEl = null;
+
+function playWelcomeIntro(){
+  try{
+    if(!introAudioEl){
+      introAudioEl = new Audio(INTRO_WELCOME_SRC);
+      introAudioEl.preload = "auto";
+    }
+    // Restart from beginning each time
+    introAudioEl.pause();
+    introAudioEl.currentTime = 0;
+    introAudioEl.play().catch(()=>{});
+  }catch(e){}
+}
+
+
+function stopWelcomeIntro(){
+  try{
+    if(introAudioEl && !introAudioEl.paused){
+      introAudioEl.pause();
+      introAudioEl.currentTime = 0;
+    }
+  }catch(e){}
+}
+
 
 const CSV_URL = "audio/bee_words.csv";
 
@@ -2523,10 +2555,7 @@ async function mp3EnsureReady(){
     }
 
     const isFile = (location.protocol === "file:");
-    const urls = (Array.isArray(MP3_URLS) && MP3_URLS.length)
-	  ? MP3_URLS
-	  : ["audio/bee_words_CBR.mp3", "audio/bee_words.mp3"];
-
+    const urls = (Array.isArray(MP3_URLS) && MP3_URLS.length) ? MP3_URLS : ["audio/bee_words.mp3"];
 
     // 3) Decide backend
     // - file:// blocks fetch() in most browsers (CORS), but <audio> usually works.
@@ -2537,13 +2566,8 @@ async function mp3EnsureReady(){
       mp3ResolvedUrl = null;
 
       // In file://, absolute "/audio/..." becomes "file:///C:/audio/..." and fails.
-      const relUrls = urls.filter(u =>
-		  typeof u === "string" &&
-		  !u.startsWith("/") &&
-		  !/^https?:\/\//i.test(u)
-		);
-		const fileUrls = relUrls.length ? relUrls : ["audio/bee_words_CBR.mp3", "audio/bee_words.mp3"];
-
+      const relUrls = urls.filter(u => typeof u === "string" && !u.startsWith("/"));
+      const fileUrls = (relUrls.length ? relUrls : ["audio/bee_words.mp3"]);
 
       // Ensure a plain Audio element (new Audio) to mimic the working pattern from your flappy app
       if (!mp3El){
@@ -2698,6 +2722,8 @@ async function speakWordPrimaryByIndex(oneBasedIndex, wordText){
 }
 
 function speakCurrent(){
+  // If welcome intro is playing, stop it before playing the word
+  stopWelcomeIntro();
   const w = currentWord();
   if(!w){ setStatus("No word"); return; }
   const one = (typeof currentIndex === "number" && currentIndex >= 0) ? (currentIndex + 1) : null;
@@ -2881,7 +2907,7 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = 52){
 
 
 function flyCoinCombo(n, intervalMs){
-  const fromEl = document.getElementById("btnUp");
+  const fromEl = document.getElementById("wordBox") || document.getElementById("btnUp");
   const toPill = document.getElementById("goodPill");
   const toEl = toPill ? (toPill.querySelector(".statIcon") || toPill) : null;
 
@@ -3183,7 +3209,7 @@ if(hardSet.has(w)){
     // Fail feedback
     popHardPill();
     playFail();
-    flyPoop(document.getElementById("btnDown"), document.getElementById("hardPill"));
+    flyPoop((document.getElementById("wordBox")||document.getElementById("btnDown")), document.getElementById("hardPill"));
 
     hardSet.add(w);
     saveHardWords(currentUser, [...hardSet]);
