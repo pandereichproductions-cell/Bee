@@ -654,7 +654,6 @@ main > section.card{
 #comboBanner .line2{ font-size: 18px; margin-top: 4px; }
 #comboBanner .line3{ font-size: 20px; margin-top: 6px; color: var(--accent); }
 
-
 @keyframes comboPop{
   0%{ opacity:0; transform: translateX(-50%) scale(0.7); }
   15%{ opacity:1; transform: translateX(-50%) scale(1.08); }
@@ -662,10 +661,8 @@ main > section.card{
   85%{ opacity:1; transform: translateX(-50%) scale(1); }
   100%{ opacity:0; transform: translateX(-50%) scale(0.98); }
 }
-20%{ opacity:1; transform: translateX(-50%) scale(1.08); }
-  60%{ opacity:1; transform: translateX(-50%) scale(1); }
-  100%{ opacity:0; transform: translateX(-50%) scale(0.95); }
-}
+
+
 
 </style>
 </head>
@@ -690,16 +687,12 @@ main > section.card{
         <div class="pill" id="rangePill">—</div>
         
 <div class="row rowTop">
-      <div id="statsPills">
+<div id="statsPills">
 <div class="pill statPill" id="goodPill">🪙 0</div>
       <div class="pill statPill" id="hardPill">💩 0</div>
 </div>
 </div>
 
-
-
-
-        <div id="statsPills"></div>
 <div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
         <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
         <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
@@ -808,6 +801,9 @@ main > section.card{
         <p class="small" style="margin-top:12px;">
           Voice: English (UK). Progress is saved separately for each user on this device.
         </p>
+
+        </div>
+
       </div>
     </div>
 
@@ -833,6 +829,13 @@ main > section.card{
   </div>
 
 <script id="helpTSV" type="text/plain">
+
+// --- Hoisted globals (avoid TDZ before init/click handlers) ---
+var mp3Timestamps = window.mp3Timestamps || [];
+var lastCombo5At = 0;
+var lastCombo10At = 0;
+var lastCombo20At = 0;
+// --------------------------------------------------------------
 Word	Definition	Sentence
  abdomen	the part of the body that contains the stomach and intestines	The doctor pressed gently on the patient's abdomen.
  aboard	on, onto, or within a vehicle	All passengers are welcome aboard the train.
@@ -1085,6 +1088,263 @@ Word	Definition	Sentence
  yearly	happening every year	It is a yearly event.
  zygote	the first cell formed from sperm and egg	A zygote begins life.
 </script>
+
+
+<!-- ===== Embedded timestamps CSV (for file:// testing, no CORS) ===== -->
+<script id="TIMESTAMPS_CSV" type="text/plain">
+Index;Word;Start;End
+1; abdomen;2.13;2.92
+2; aboard;4.81;5.64
+3; accident;7.93;8.84
+4; anchor;10.91;11.56
+5; ancient;13.7;14.41
+6; Antarctica;16.53;17.52
+7; anxious;19.74;20.58
+8; appreciate;22.98;23.98
+9; approximate;26.22;27.35
+10; arrogant;29.6;30.38
+11; artificial;32.58;33.47
+12; attempt;35.6;36.2
+13; aware;38.59;39.23
+14; assessment;42.27;43.07
+15; associate;45.85;46.71
+16; athlete;49.3;50.13
+17; atmosphere;52.53;53.34
+18; authority;55.41;56.18
+19; awkward;58.95;59.62
+20; beard;61.87;62.57
+21; beneficial;65.21;66.08
+22; billboard;68.8;69.62
+23; black;71.95;72.71
+24; blend;75.3;76.05
+25; blocks;78.69;79.56
+26; bloom;83.6;84.38
+27; bookstore;86.84;87.7
+28; bracelet;90.47;91.35
+29; breezy;94.6;95.48
+30; brick;97.65;98.26
+31; bright;101;101.65
+32; bubble;104.29;104.92
+33; bungalow;107.73;108.48
+34; bury;111.06;111.61
+35; busy;114.66;115.31
+36; captain;117.81;118.53
+37; carpet;121.09;121.75
+38; cashier;124.51;125.3
+39; cell;127.71;128.39
+40; cereal;130.54;131.3
+41; Chancellor;133.69;134.52
+42; Chicago;137.24;138.1
+43; chilly;141;141.62
+44; circuit;144.15;144.75
+45; circular;147.43;148.24
+46; clerk;150.95;151.46
+47; climate;154.16;154.89
+48; comet;157.58;158.22
+49; conservation;160.99;162.04
+50; conquer;164.24;165.05
+51; corrosion;169.48;170.61
+52; crater;173.4;174.11
+53; credibility;176.98;177.86
+54; crucial;180.66;181.46
+55; crowd;184.54;185.29
+56; curiosity;187.79;188.88
+57; custom;192.45;193.17
+58; decade;195.93;196.69
+59; decide;199.41;200.19
+60; design;202.39;203.12
+61; develop;205.43;206.1
+62; dictation;209.27;210.18
+63; dirty;212.57;213.19
+64; disappearing;215.68;216.65
+65; disguise;219.51;220.39
+66; ecology;223.25;224.1
+67; elderly;226.73;227.42
+68; electricity;230.22;231.12
+69; employer;234.06;234.96
+70; end;237.2;237.66
+71; evaporate;240.47;241.32
+72; event;244.32;244.96
+73; expect;247.78;248.81
+74; expensive;251.63;252.84
+75; extremely;255.42;256.83
+76; fascinate;260.08;260.95
+77; fertilization;263.48;264.61
+78; fiction;267.43;268.2
+79; forbid;270.67;271.29
+80; foreground;273.41;274.35
+81; foreign;276.96;277.61
+82; forever;279.97;280.67
+83; fragile;283.31;284.09
+84; frustrate;287.02;287.82
+85; galaxy;291.04;291.85
+86; gas;294.28;294.89
+87; generate;297.51;298.28
+88; geranium;301.77;302.54
+89; glove;305.45;306.22
+90; goods;308.4;309.09
+91; glacier;311.79;312.79
+92; grass;315.19;315.93
+93; hesitate;318.35;319.16
+94; hope;321.62;322.17
+95; hostess;324.71;325.55
+96; hotel;327.93;328.67
+97; how;331.02;331.6
+98; huge;333.91;334.75
+99; idol;337.63;338.2
+100; illness;340.41;341.08
+101; immense;344.8;345.47
+102; impressionism;348.6;349.64
+103; incredible;352.53;353.74
+104; ingredients;356.82;357.79
+105; inhale;360.83;361.54
+106; inquiry;364.48;365.22
+107; insomnia;368.47;369.42
+108; integrity;372.59;373.43
+109; jubilee;376.5;377.35
+110; juvenile;380.58;381.46
+111; just;384.74;385.19
+112; kindness;388.73;389.6
+113; lamps;392.95;393.65
+114; labyrinth;397;397.75
+115; legendary;401.16;402.07
+116; literacy;405.58;406.41
+117; lifeguard;409.88;410.71
+118; majestic;413.7;414.56
+119; magma;418.03;418.73
+120; male;421.98;422.58
+121; malice;425.74;426.48
+122; marathon;429.78;430.56
+123; marshmallow;433.84;434.8
+124; master;438.07;438.8
+125; metaphor;442.08;442.86
+126; meridian;448.31;449.12
+127; met;452.19;452.67
+128; meteorology;456.12;457.21
+129; melancholy;460.45;461.36
+130; migration;464.37;465.27
+131; mitochondria;468.44;469.54
+132; moisture;472.73;473.5
+133; molars;476.81;477.64
+134; monologue;481.17;482.04
+135; moss;485.45;486.23
+136; mosque;489.34;489.97
+137; mount;492.97;493.45
+138; muscle;496.84;497.54
+139; narrow;501.02;501.68
+140; nautical;504.78;505.46
+141; neurons;508.91;509.67
+142; nerve;513.22;513.8
+143; nickname;516.81;517.55
+144; night;520.74;521.27
+145; notorious;525.76;526.68
+146; nutritious;529.75;530.6
+147; obsession;535.02;535.89
+148; offensive;539.1;539.94
+149; operation;543.47;544.39
+150; opponent;547.31;547.95
+151; orient;552.93;553.56
+152; otherwise;556.57;557.38
+153; outrageous;560.39;561.36
+154; patience;564.54;565.24
+155; paranormal;568.55;569.42
+156; passionate;572.41;573.12
+157; paycheck;576.13;576.78
+158; peninsula;579.91;580.63
+159; pharynx;583.52;584.18
+160; philosopher;587.05;587.89
+161; phrase;590.89;591.57
+162; pollen;594.55;595.12
+163; pollination;597.98;598.9
+164; post office;601.88;602.79
+165; prejudice;605.87;606.64
+166; preserve;609.59;610.31
+167; program;613.52;614.23
+168; prokaryotic;617.25;618.31
+169; property;621.26;621.94
+170; pry;624.86;625.43
+171; pyramid;628.33;629.02
+172; quantity;632.07;632.84
+173; raft;635.94;636.62
+174; ranch;639.62;640.25
+175; rare;643.51;644.04
+176; read;648.33;648.82
+177; receptor;652.56;653.47
+178; reinforce;656.48;657.45
+179; reindeer;660.4;661.18
+180; relief;663.7;664.31
+181; renewable resources;667.56;669.14
+182; repair;672.05;672.73
+183; resort;675.53;676.21
+184; reuse;679.21;680.02
+185; ring;683.07;683.59
+186; river;686.42;686.95
+187; robbery;689.94;690.66
+188; rush;693.5;694.03
+189; sanctuary;696.81;697.86
+190; skeptical;700.28;701.21
+191; sheet;704.33;704.85
+192; shout;707.77;708.41
+193; silkworms;711.36;712.49
+194; silver;715.27;715.99
+195; sled;718.9;719.68
+196; snakebite;722.51;723.46
+197; snowflake;726.24;727.11
+198; soda;730;730.59
+199; soil;733.32;734.05
+200; solar;736.2;736.82
+201; solution;740.72;741.52
+202; somehow;744.15;744.9
+203; something;747.66;748.32
+204; somewhere;750.71;751.43
+205; speak;754.11;754.81
+206; speed;757.51;758.17
+207; spiral;761.03;761.74
+208; spirit;764.48;765.15
+209; spoil;767.74;768.48
+210; spectacle;771.27;772.15
+211; squeeze;774.8;775.58
+212; stage;778.35;779.03
+213; stare;781.9;782.58
+214; stem;785.48;786.13
+215; stereo;788.96;789.77
+216; stimulus;793.21;794.09
+217; stove;797.08;797.8
+218; stretch out;800.61;801.42
+219; subject;804.21;804.97
+220; suggested;807.69;808.55
+221; sunlight;811.32;812.09
+222; suspect;815.22;816.04
+223; tadpole;819.22;820.03
+224; talkative;823.14;823.9
+225; tendon;827.01;827.67
+226; thunder;832.4;832.95
+227; toboggan;836.16;836.98
+228; tolerance;840.15;840.89
+229; training;843.95;844.65
+230; turbulence;847.36;848.15
+231; undertake;850.99;851.79
+232; unpredictable;854.92;855.94
+233; unicellular;859.76;860.74
+234; virtual;863.86;864.58
+235; vivid;867.6;868.23
+236; viviparous;871.32;872.31
+237; vow;875.38;876
+238; wagged;878.83;879.55
+239; war;882.75;883.38
+240; wavy;886.05;886.64
+241; weapon;889.58;890.21
+242; werewolf;893.28;894.04
+243; which;897.06;897.51
+244; wildlife;900.5;901.32
+245; wind energy;904.47;905.41
+246; womb;908.59;909.21
+247; wonderful;912.27;912.96
+248; wring;915.75;916.4
+249; yearly;919.65;920.29
+250; zygote;922.94;923.58
+</script>
+<!-- =============================================================== -->
 
 <script>
 /** Your exact list (kept in this exact order for band numbers) **/
@@ -1416,9 +1676,8 @@ elListBox.addEventListener("click", (e) => {
   const enc = item.getAttribute("data-w");
   if(!enc) return;
   const w = decodeURIComponent(enc);
-  // Ensure voices are unlocked on iOS
-  silentActivation();
-  speakText(w, () => setStatus("Ready"));
+  // MP3 timestamps primary, TTS fallback
+  speakWordPrimary(w);
 });
 
 const elSearch = document.getElementById("searchBox");
@@ -1497,13 +1756,19 @@ btnOrderRandom.addEventListener("click", ()=> setOrderMode(ORDER_MODES.RANDOM));
 btnOrderInOrder.addEventListener("click", ()=> setOrderMode(ORDER_MODES.ORDER));
 
 /** Init **/
-init();
+window.addEventListener('DOMContentLoaded', ()=>{ try{ init(); }catch(e){ console.error(e); } });
 
 function init(){
   parseHelpTSV();
   maxN.textContent = String(WORDS.length);
   fromSlider.max = String(Math.max(1, WORDS.length));
   toSlider.max = String(Math.max(1, WORDS.length));
+
+  // MP3 timestamps (embedded CSV) + automatic MP3 warmup on first user interaction
+  mp3Timestamps = mp3LoadEmbeddedTimestamps();
+  // First interaction triggers iOS unlock + preload (no menus / manual load)
+  window.addEventListener("pointerdown", mp3Kickoff, { once:true, passive:true });
+  window.addEventListener("keydown", mp3Kickoff, { once:true });
 
   // Always ask user every open
   openUserPicker(false);
@@ -1530,6 +1795,7 @@ function selectUser(userKey){
   stats.streak = 0;
   lastCombo5At = 0;
   lastCombo10At = 0;
+  lastCombo20At = 0;
   saveStats(currentUser, stats);
 renderAwards();
 
@@ -1697,6 +1963,7 @@ function adminAwardsWithPassword(){
 
     lastCombo5At = 0;
     lastCombo10At = 0;
+    lastCombo20At = 0;
 
     renderAwards();
     updatePills();
@@ -1751,6 +2018,7 @@ String(levelDefault)
 
     lastCombo5At = 0;
     lastCombo10At = 0;
+    lastCombo20At = 0;
 
     renderAwards();
     updatePills();
@@ -1807,6 +2075,7 @@ function adminAwardsWithPassword(){
 
     lastCombo5At = 0;
     lastCombo10At = 0;
+    lastCombo20At = 0;
 
     renderAwards();
     updatePills();
@@ -1861,6 +2130,7 @@ String(levelDefault)
 
     lastCombo5At = 0;
     lastCombo10At = 0;
+    lastCombo20At = 0;
 
     renderAwards();
     updatePills();
@@ -2046,27 +2316,393 @@ function currentWord(){
   return WORDS[currentIndex] || "";
 }
 
+// =================== MP3 timestamps (primary) + TTS fallback ===================
+// Put these two files in: /audio/
+//  - audio/bee_words.csv  (Index;Word;Start;End)  -> recommended: Bee_250_Words_only.csv renamed
+//  - audio/bee_words.mp3  (the single MP3 with all words)
+const MP3_PRIMARY_ENABLED = true;
+
+// You can rename these as you like, just keep them in /audio/
+const MP3_URLS = [
+  // ✅ Local relative (file://) + Web relative
+  "audio/bee_words_CBR.mp3",
+  "audio/bee_words.mp3",
+
+  // ✅ Web absolute (solo http/https)
+  "/audio/bee_words_CBR.mp3",
+  "/audio/bee_words.mp3",
+
+  // ✅ GitHub Pages subpath fallback
+  "main/audio/bee_words_CBR.mp3",
+  "main/audio/bee_words.mp3",
+  "/main/audio/bee_words_CBR.mp3",
+  "/main/audio/bee_words.mp3",
+];
+
+const CSV_URL = "audio/bee_words.csv";
+
+// MP3 (single audio file) — unified variables
+let mp3Ctx = null;
+let mp3Gain = null;
+let mp3Buffer = null;      // decoded AudioBuffer used by mp3PlayByIndex
+mp3Timestamps = null;  // array: mp3Timestamps[i] = {start,end,word}
+let mp3Ready = false;
+let mp3El = null;          
+let mp3ResolvedUrl = null;  // chosen URL that works in this environment
+let mp3Backend = null;      // "webaudio" | "htmlaudio"
+let mp3HtmlStopTimer = null;
+// <audio> used only to unlock iOS autoplay restrictions
+
+function mp3ParseCSV(text){
+  // Acepta cabecera EXACTA: Index,Word,Start,End
+  // (también tolera ';' como separador en el contenido)
+  if(typeof text !== "string") throw new Error("CSV vacío o no válido");
+
+  // Normaliza saltos
+  const rawLines = text.replace(/\r/g, "").split("\n");
+
+  // Quita líneas vacías iniciales
+  const lines = rawLines.filter(l => l.trim().length > 0);
+  if(lines.length === 0) throw new Error("CSV vacío");
+
+  // Detecta separador por la cabecera (prioriza coma)
+  const headerLine = lines[0].trim();
+  const headerNorm = headerLine.replace(/;/g, ",");
+  if(headerNorm !== "Index,Word,Start,End"){
+    throw new Error("Cabecera debe ser: Index,Word,Start,End");
+  }
+
+  // El separador real: si la cabecera contiene ';', usamos ';', si no ','
+  const sep = headerLine.includes(";") ? ";" : ",";
+
+  const out = [];
+  for(let i=1;i<lines.length;i++){
+    const line = lines[i];
+    if(!line || !line.trim()) continue;
+
+    // Split solo en separador (NO tocar espacios dentro de Word)
+    const parts = line.split(sep);
+
+    // Debe tener al menos 4 columnas
+    if(parts.length < 4) continue;
+
+    // OJO: Word puede contener separadores si el CSV estuviera mal; aquí asumimos formato estándar:
+    // Index | Word | Start | End
+    // Mantén exactamente Word como viene (incluye espacios dobles si existieran)
+    const idxStr   = (parts[0] ?? "").trim();
+    const wordRaw  = (parts[1] ?? ""); // NO trim agresivo para preservar espacios internos
+    const startStr = (parts[2] ?? "").trim();
+    const endStr   = (parts[3] ?? "").trim();
+
+    const idx = parseInt(idxStr, 10);
+    const start = parseFloat(startStr);
+    const end   = parseFloat(endStr);
+
+    // Validación mínima
+    if(!Number.isFinite(idx) || !Number.isFinite(start) || !Number.isFinite(end)) continue;
+    if(end <= start) continue;
+
+    out.push({
+      index: idx,
+      word: wordRaw,   // se conserva tal cual (incluye espacios internos)
+      start: start,
+      end: end
+    });
+  }
+
+  // Ordena por index por si viene mezclado
+  out.sort((a,b)=>a.index-b.index);
+
+  return out;
+}
+
+
+function mp3LoadEmbeddedTimestamps(){
+  try{
+    const el = document.getElementById("TIMESTAMPS_CSV");
+    if(!el) return null;
+    const raw = (el.textContent || "").trim();
+    if(!raw) return null;
+    const rows = mp3ParseCSV(raw);
+    if(!rows || !rows.length) return null;
+
+    // Build 1-based array: mp3Timestamps[1]..[N]
+    const maxIdx = rows[rows.length-1].index;
+    const arr = new Array(maxIdx + 1);
+    for(const r of rows){
+      arr[r.index] = { start: r.start, end: r.end, word: r.word };
+    }
+    return arr;
+  }catch(e){
+    console.warn("Embedded timestamps parse failed:", e);
+    return null;
+  }
+}
+
+let mp3KickStarted = false;
+function mp3Kickoff(){
+  if(mp3KickStarted) return;
+  mp3KickStarted = true;
+  if(!MP3_PRIMARY_ENABLED) return;
+  if(!mp3Timestamps) return;
+  mp3EnsureReady().catch(()=>{});
+}
+
+async function mp3EnsureReady(){
+  if (!MP3_PRIMARY_ENABLED) return false;
+  if (mp3Ready) return true;
+
+  // Helper: try URLs sequentially (for <audio> element)
+  const tryAudioSrc = (el, urls) => new Promise(resolve => {
+    let i = 0;
+    const clean = () => {
+      el.removeEventListener("canplaythrough", onOk);
+      el.removeEventListener("loadedmetadata", onOk);
+      el.removeEventListener("error", onErr);
+    };
+    const onOk = () => { clean(); resolve(urls[i-1] || null); };
+    const onErr = () => { next(); };
+    const next = () => {
+      if (i >= urls.length){ clean(); resolve(null); return; }
+      const u = urls[i++];
+      try{
+        el.src = u;
+        el.load();
+      }catch(e){
+        next();
+      }
+    };
+    el.addEventListener("canplaythrough", onOk, { once:false });
+    el.addEventListener("loadedmetadata", onOk, { once:false });
+    el.addEventListener("error", onErr, { once:false });
+    next();
+  });
+
+  // Helper: try fetch+decode sequentially
+  const tryFetchDecode = async (urls) => {
+    for(const u of urls){
+      try{
+        const res = await fetch(u, { cache: "force-cache" });
+        if(!res.ok) continue;
+        const arr = await res.arrayBuffer();
+        const decodedBuffer = await mp3Ctx.decodeAudioData(arr);
+        if(decodedBuffer && decodedBuffer.duration > 0){
+          mp3ResolvedUrl = u;
+          mp3Buffer = decodedBuffer;
+          return true;
+        }
+      }catch(e){
+        // try next
+      }
+    }
+    return false;
+  };
+
+  try{
+    // 1) AudioContext
+    if (!mp3Ctx){
+      mp3Ctx = new (window.AudioContext || window.webkitAudioContext)();
+      mp3Gain = mp3Ctx.createGain();
+      mp3Gain.connect(mp3Ctx.destination);
+    }
+
+    // 2) Audio element (used for iOS unlock + HTMLAudio backend)
+    if (!mp3El){
+      const isFileProto = (location.protocol === "file:");
+      mp3El = isFileProto ? new Audio() : document.createElement("audio");
+      mp3El.preload = "auto";
+      // Only set crossOrigin when we are NOT in file://
+      if(!isFileProto) mp3El.crossOrigin = "anonymous";
+      // If we created a detached <audio>, append so it can load reliably on some browsers
+      if(!isFileProto){
+        mp3El.muted = true;
+        document.body.appendChild(mp3El);
+      } else {
+        mp3El.muted = false;
+      }
+    }
+
+    const isFile = (location.protocol === "file:");
+    const urls = (Array.isArray(MP3_URLS) && MP3_URLS.length)
+	  ? MP3_URLS
+	  : ["audio/bee_words_CBR.mp3", "audio/bee_words.mp3"];
+
+
+    // 3) Decide backend
+    // - file:// blocks fetch() in most browsers (CORS), but <audio> usually works.
+    // - http/https: prefer WebAudio (more precise + no drift), fallback to <audio>.
+    if (isFile){
+      // Local file:// mode: DO NOT use fetch/decode (CORS). Use HTMLAudio with RELATIVE paths.
+      mp3Backend = "htmlaudio";
+      mp3ResolvedUrl = null;
+
+      // In file://, absolute "/audio/..." becomes "file:///C:/audio/..." and fails.
+      const relUrls = urls.filter(u =>
+		  typeof u === "string" &&
+		  !u.startsWith("/") &&
+		  !/^https?:\/\//i.test(u)
+		);
+		const fileUrls = relUrls.length ? relUrls : ["audio/bee_words_CBR.mp3", "audio/bee_words.mp3"];
+
+
+      // Ensure a plain Audio element (new Audio) to mimic the working pattern from your flappy app
+      if (!mp3El){
+        mp3El = new Audio();
+        mp3El.preload = "auto";
+      }
+      mp3El.muted = false;
+
+      const chosen = await tryAudioSrc(mp3El, fileUrls);
+      if(!chosen){
+        mp3Ready = false;
+        mp3Backend = null;
+        mp3ResolvedUrl = null;
+        return false;
+      }
+      mp3ResolvedUrl = chosen;
+      mp3El.src = chosen;
+      mp3Ready = true;
+      return true;
+    }
+
+    // 4) WebAudio route (prefer)
+    mp3Backend = "webaudio";
+
+    // Make sure <audio> has a working src for iOS unlock as well
+    const chosenForEl = await tryAudioSrc(mp3El, urls);
+    if(chosenForEl){
+      mp3ResolvedUrl = chosenForEl;
+      mp3El.src = chosenForEl;
+    }
+
+    // iOS unlock (must be after a user gesture; if this runs without one it will just fail silently)
+    try{
+      await mp3El.play();
+      mp3El.pause();
+      mp3El.currentTime = 0;
+    }catch(e){}
+
+    // Fetch + decode (try all candidates)
+    const ok = await tryFetchDecode(urls);
+    if(ok){
+      mp3Ready = true;
+      return true;
+    }
+
+    // 5) Fallback to HTMLAudio even on web
+    mp3Backend = "htmlaudio";
+    if(!mp3ResolvedUrl){
+      const chosen2 = await tryAudioSrc(mp3El, urls);
+      mp3ResolvedUrl = chosen2;
+    }
+    if(!mp3ResolvedUrl) throw new Error("No MP3 URL worked");
+    mp3El.src = mp3ResolvedUrl;
+    mp3El.muted = false;
+    mp3Ready = true;
+    return true;
+
+  } catch(err){
+    console.error("MP3 init error:", err);
+    mp3Ready = false;
+    mp3Backend = null;
+    mp3ResolvedUrl = null;
+    return false;
+  }
+}
+
+
+
+function mp3PlayByIndex(index){
+  if (!mp3Ready) return false;
+  if (!mp3Timestamps || !mp3Timestamps[index]) return false;
+
+  const { start, end } = mp3Timestamps[index];
+  const duration = Math.max(0, end - start);
+
+  // Backend A: WebAudio (decoded buffer)
+  if (mp3Backend === "webaudio"){
+    if (!mp3Ctx || !mp3Gain || !mp3Buffer) return false;
+    try{
+      const src = mp3Ctx.createBufferSource();
+      src.buffer = mp3Buffer;
+      src.connect(mp3Gain);
+      src.start(0, start, duration);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  // Backend B: HTMLAudio (works even on file:// without fetch)
+  if (mp3Backend === "htmlaudio" && mp3El){
+    try{
+      if (mp3HtmlStopTimer){
+        clearTimeout(mp3HtmlStopTimer);
+        mp3HtmlStopTimer = null;
+      }
+      mp3El.pause();
+      mp3El.currentTime = Math.max(0, start + 0.01); // tiny nudge avoids sticking
+      mp3El.play().catch(()=>{});
+      mp3HtmlStopTimer = setTimeout(()=>{
+        try{ mp3El.pause(); }catch(e){}
+      }, Math.max(20, duration * 1000 + 30));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  return false;
+}
+
+
+
+// Main entry: try MP3 timestamps first, else TTS
+async function speakWordPrimary(wordText){
+  const w = (wordText || "").trim();
+  if(!w) return;
+
+  // Find 1-based word index by list order
+  const idx0 = WORDS.indexOf(w);
+  const one = idx0 >= 0 ? (idx0 + 1) : null;
+
+  // Try MP3 only if we can map to an index
+  if(one !== null){
+    try{
+      const ok = await mp3EnsureReady();
+      if(ok && mp3PlayByIndex(one)){
+        return;
+      }
+    }catch(e){
+      // fall through to TTS
+    }
+  }
+
+  // Fallback: keep your existing voice system
+  silentActivation();
+  speakText(w);
+}
+
+// Prefer MP3 by 1-based word index (no string lookup). Falls back to TTS.
+async function speakWordPrimaryByIndex(oneBasedIndex, wordText){
+  const w = (wordText || "").trim();
+  if(!w) return;
+  if(oneBasedIndex == null) return speakWordPrimary(w);
+  try{
+    const ok = await mp3EnsureReady();
+    if(ok && mp3PlayByIndex(oneBasedIndex)) return;
+  }catch(e){}
+  // fallback
+  silentActivation();
+  speakText(w);
+}
+
 function speakCurrent(){
   const w = currentWord();
   if(!w){ setStatus("No word"); return; }
-  if(!("speechSynthesis" in window)){
-    setStatus("No voice support");
-    alert("This browser does not support SpeechSynthesis.");
-    return;
-  }
-  window.speechSynthesis.cancel();
-
-  const u = new SpeechSynthesisUtterance(w);
-  u.lang = VOICE_LANG;
-  if(preferredVoice) u.voice = preferredVoice;   // ✅ AQUÍ
-  u.rate = 0.95;
-  u.pitch = 1.05;
-
-  u.onstart = () => setStatus("Playing…");
-  u.onend = () => setStatus("Ready");
-  u.onerror = () => setStatus("Could not play");
-
-  window.speechSynthesis.speak(u);
+  const one = (typeof currentIndex === "number" && currentIndex >= 0) ? (currentIndex + 1) : null;
+  // MP3 timestamps primary, TTS fallback
+  speakWordPrimaryByIndex(one, w);
 }
 
 let rewardCtx = null;
@@ -2153,8 +2789,9 @@ function playRewardCelebration(){
 let coinCtx = null;
 
 /* Session-only combo trackers (avoid re-triggering at the same milestone) */
-let lastCombo5At = 0;
-let lastCombo10At = 0;
+lastCombo5At = 0;
+lastCombo10At = 0;
+lastCombo20At = 0;
 
 function playCoin(){
   try{
@@ -2299,6 +2936,11 @@ function showComboBanner(type){
       <div class="line1">Amazing! ⭐</div>
       <div class="line2">10 in a row!</div>
       <div class="line3">+5 Coins Bonus</div>`;
+  } else if(type === 20){
+    el.innerHTML = `
+      <div class="line1">Unstoppable! 🚀</div>
+      <div class="line2">20 in a row!</div>
+      <div class="line3">+10 Coins Bonus</div>`;
   } else {
     return;
   }
@@ -2556,12 +3198,21 @@ if(hardSet.has(w)){
 
   if(gotIt){
     stats.streak++;
-// Coin combos: trigger at 5,15,25... (3 coins) and 10,20,30... (5 coins)
-// Never mix: 10-milestones take priority over 5-milestones.
+// Coin combos:
+// - 5,15,25...  => +3 coins
+// - 10,30,50... => +5 coins
+// - 20,40,60... => +10 coins
+// Priority: 20 > 10 > 5 (never stack in the same answer)
 let comboN = 1;
 let intervalMs = 0;
 
-if(stats.streak % 10 === 0 && stats.streak !== lastCombo10At){
+if(stats.streak % 20 === 0 && stats.streak !== lastCombo20At){
+  comboN = 10;
+  intervalMs = 140;
+  lastCombo20At = stats.streak;
+
+      showComboBanner(20);
+} else if(stats.streak % 10 === 0 && stats.streak !== lastCombo10At){
   comboN = 5;
   intervalMs = 160;
   lastCombo10At = stats.streak;
@@ -2584,6 +3235,8 @@ flyCoinCombo(comboN, intervalMs);
     stats.streak = 0;
     lastCombo5At = 0;
     lastCombo10At = 0;
+    lastCombo20At = 0;
+    lastCombo20At = 0;
   }
   saveStats(currentUser, stats);
   renderAwards();
