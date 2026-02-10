@@ -396,16 +396,16 @@
       gap:10px;
       flex-wrap:wrap;
       justify-content:center;
-      margin: 12px 0 6px;
+      margin: 8px 0 6px;
     }
     .award{
-      width: 56px;
-      height: 56px;
-      border-radius:16px;
+      width: 40px;
+      height: 40px;
+      border-radius:10px;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size: 36px;
+      font-size: 26px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.06);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
@@ -557,7 +557,7 @@
   display:flex;
   justify-content:center;
   gap:14px;
-  margin: 10px 0 6px 0;
+  margin: 6px 0 2px 0;
 }
 
 
@@ -804,7 +804,17 @@ main > section.card{
   animation: wrongFlash 520ms ease-out, wrongShake 380ms ease-out;
 }
 
-</style>
+
+    /* iOS Safari stability for emoji fallback: avoid filter-based compositing glitches */
+    body.emojiMode .coinFly,
+    body.emojiMode .poopFly{
+      filter: none !important;
+    }
+    body.emojiMode .emoji-fly{
+      text-shadow: 0 6px 18px rgba(0,0,0,.25);
+    }
+
+  </style>
 </head>
 
 <body>
@@ -826,16 +836,16 @@ main > section.card{
       <section class="card">
         <div class="pill" id="rangePill">—</div>
         
+<div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
+        <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
+        <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
 <div class="row rowTop">
 <div id="statsPills">
 <div class="pill statPill" id="goodPill"><img src="img/coin.png" class="iconImg" alt="coin" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'🪙')"> <span>0</span></div>
       <div class="pill statPill" id="hardPill"><img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')"> <span>0</span></div>
 </div>
 </div>
-
-<div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
-        <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
-        <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
         <canvas id="wordFx" class="wordFx" aria-hidden="true"></canvas>
 
@@ -1521,11 +1531,47 @@ const WORDS = [
 const ICON_COIN_SRC = "img/coin.png";
 const ICON_POO_SRC  = "img/poo.png";
 
+let ICON_MODE = "png"; // "png" | "emoji"
+let _iconDetectPromise = null;
+
+// Detect once whether PNG icons are available. If not, switch to emoji mode (no <img> -> no iOS flicker).
+function detectIconMode(){
+  if (_iconDetectPromise) return _iconDetectPromise;
+  _iconDetectPromise = new Promise((resolve)=>{
+    let done = 0, ok = 0;
+    const finish = ()=>{
+      if (++done < 2) return;
+      ICON_MODE = (ok === 2) ? "png" : "emoji";
+      document.body && document.body.classList.toggle("emojiMode", ICON_MODE === "emoji");
+      resolve(ICON_MODE);
+    };
+    const test = (src)=>{
+      const im = new Image();
+      im.onload = ()=>{ ok++; finish(); };
+      im.onerror = ()=>{ finish(); };
+      // cache-bust a bit to avoid stale failed cache in iOS file://
+      im.src = src + ((src.includes("?") ? "&" : "?") + "v=" + Date.now());
+    };
+    test(ICON_COIN_SRC);
+    test(ICON_POO_SRC);
+  });
+  return _iconDetectPromise;
+}
+
 // Returns an <img> tag that falls back to emoji if the image fails to load.
 function iconCoinHTML(cls="iconImg"){
+  // In emoji mode, never create <img> tags (avoids iOS Safari flicker/glitches when audio plays).
+  if (ICON_MODE === "emoji"){
+    const kind = (cls === "flyIconImg") ? "fly" : (cls === "statIconImg" ? "pill" : "inline");
+    return `<span class="emojiIcon emoji-${kind}" aria-hidden="true">🪙</span>`;
+  }
   return `<img src="${ICON_COIN_SRC}" class="${cls}" alt="coin" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'🪙')">`;
 }
 function iconPooHTML(cls="iconImg"){
+  if (ICON_MODE === "emoji"){
+    const kind = (cls === "flyIconImg") ? "fly" : (cls === "statIconImg" ? "pill" : "inline");
+    return `<span class="emojiIcon emoji-${kind}" aria-hidden="true">💩</span>`;
+  }
   return `<img src="${ICON_POO_SRC}" class="${cls}" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">`;
 }
 
@@ -1543,7 +1589,8 @@ function iconFallback(img, emoji){
   img.replaceWith(span);
 }
 (function initIconImgs(){
-  window.addEventListener('DOMContentLoaded', ()=>{
+  window.addEventListener('DOMContentLoaded', async ()=>{
+    try{ await detectIconMode(); }catch(e){}
     document.querySelectorAll('img.iconImg, img.statIconImg, img.flyIconImg').forEach(img=>{
       // If already loaded from cache, mark as loaded (avoid staying invisible)
       if (img.complete && img.naturalWidth > 0){
