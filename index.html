@@ -12,6 +12,9 @@
       --good:#3ee08f;
       --bad:#ff6b6b;
       --accent:#ffd166;
+      --inlineIcon:22px;
+      --pillIcon:64px;
+      --flyIcon:64px;
     }
     body{
       margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -430,6 +433,17 @@
       display:none;
     }
 
+    /* Word disintegration canvas (particles) */
+    .wordFx{
+      position: fixed;
+      left: 0; top: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 110; /* above app, below comboBanner(10000) but that is fixed too */
+      display: none;
+    }
+
     .awardMsg{
       text-align:center;
       margin-top:6px;
@@ -547,6 +561,36 @@
 }
 
 
+
+/* TOP stats pills: always big (even after JS rebuilds) */
+#statsPills img{
+  width: var(--pillIcon) !important;
+  height: var(--pillIcon) !important;
+  max-width: none !important;
+  max-height: none !important;
+  vertical-align: 0;
+}
+/* TOP stats emoji fallback size */
+#statsPills .emojiIcon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width: var(--pillIcon);
+  height: var(--pillIcon);
+  font-size: calc(var(--pillIcon) - 6px);
+  line-height: 1;
+}
+/* Tighten spacing inside the top stats pills */
+#statsPills .statPill{
+  gap: 4px !important;
+}
+#statsPills .statPill span{
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--text);
+  margin: 0;
+}
 /* Range pill anchored inside the game window */
 main > section.card{
   position: relative;
@@ -559,7 +603,7 @@ main > section.card{
 }
 
 
-/* 🪙 success pop animation */
+/* success pop animation */
 @keyframes pillPop{
   0%{ transform: scale(1); }
   35%{ transform: scale(1.22); }
@@ -585,7 +629,7 @@ main > section.card{
   filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));
 }
 
-/* Poop fly (from 💩 button to 💩 pill) */
+/* Poop fly (from poops  button to poops  pill) */
 .poopFly{
   position: fixed;
   z-index: 9999;
@@ -664,6 +708,102 @@ main > section.card{
 
 
 
+
+/* --- ICON SIZES (PNG / consistent on iPhone + desktop) --- */
+:root{
+  --inlineIcon: 22px;     /* icons inside buttons / small UI */
+  --pillIcon: 64px;       /* big icons in the top stats pills */
+  --flyIcon: 64px;        /* flying coin/poo visual size */
+}
+
+/* default inline icon */
+.iconImg{
+  width: var(--inlineIcon);
+  height: var(--inlineIcon);
+  vertical-align: -4px;
+}
+
+/* icons used by JS when it rebuilds the pills */
+.statIconImg{
+  width: var(--pillIcon);
+  height: var(--pillIcon);
+  display:block;
+  max-width: none;
+  max-height: none;
+}
+
+/* icons used by flying animations */
+.flyIconImg{
+  width: 100%;
+  height: 100%;
+  display:block;
+  pointer-events:none;
+}
+
+/* force the TOP stats pill icons to stay big (even after JS rebuilds pills) */
+#statsPills img{
+  width: var(--pillIcon) !important;
+  height: var(--pillIcon) !important;
+  max-width: none !important;
+  max-height: none !important;
+  vertical-align: -10px;
+}
+
+
+/* Emoji fallback inside TOP stats pills: force same size as PNG */
+#statsPills .emojiIcon.emoji-pill{
+  width: var(--pillIcon) !important;
+  height: var(--pillIcon) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: calc(var(--pillIcon) - 6px) !important;
+  line-height: 1 !important;
+}
+
+/* Keep icon + counter tight in TOP pills (JS may rebuild markup) */
+#statsPills .statPill{
+  gap: 2px !important;
+  padding: 4px 6px !important;
+}
+#statsPills .statPill span,
+#statsPills .statNum{
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  color: var(--text) !important;
+}
+
+/* flying containers follow --flyIcon (JS also sets explicit px sizes) */
+.coinFly, .poopFly{
+  width: var(--flyIcon);
+  height: var(--flyIcon);
+}
+
+
+/* Wrong-answer effect: red glow + gentle shake on the word */
+@keyframes wrongFlash{
+  0%{ transform: scale(1); filter:none; }
+  12%{ transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(255,0,0,.55)) drop-shadow(0 0 26px rgba(255,0,0,.28)); }
+  55%{ transform: scale(1.00); filter: drop-shadow(0 0 6px rgba(255,0,0,.35)); }
+  100%{ transform: scale(1); filter:none; }
+}
+@keyframes wrongShake{
+  0%{ transform: translateX(0); }
+  15%{ transform: translateX(-6px); }
+  30%{ transform: translateX(6px); }
+  45%{ transform: translateX(-4px); }
+  60%{ transform: translateX(4px); }
+  100%{ transform: translateX(0); }
+}
+/* #wordBox already uses .bigWord */
+.bigWord.wrongFX{
+  color: #ff4b4b !important;
+  text-shadow: 0 10px 28px rgba(255,0,0,.22) !important;
+  animation: wrongFlash 520ms ease-out, wrongShake 380ms ease-out;
+}
+
 </style>
 </head>
 
@@ -688,14 +828,16 @@ main > section.card{
         
 <div class="row rowTop">
 <div id="statsPills">
-<div class="pill statPill" id="goodPill">🪙 0</div>
-      <div class="pill statPill" id="hardPill">💩 0</div>
+<div class="pill statPill" id="goodPill"><img src="img/coin.png" class="iconImg" alt="coin" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'🪙')"> <span>0</span></div>
+      <div class="pill statPill" id="hardPill"><img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')"> <span>0</span></div>
 </div>
 </div>
 
 <div id="awardsRow" class="awardsRow" aria-label="Awards"></div>
         <div id="awardMsg" class="awardMsg" aria-live="polite"></div>
         <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
+        <canvas id="wordFx" class="wordFx" aria-hidden="true"></canvas>
 
         <div class="bigWord" id="wordBox">• • •</div>
 
@@ -713,8 +855,8 @@ main > section.card{
 
 
         <div class="controls" id="markRow" style="display:none; margin-top:14px;">
-          <button class="good" id="btnUp">🪙 I got it</button>
-          <button class="bad" id="btnDown">💩 Need practise</button>
+          <button class="good" id="btnUp"><img src="img/coin.png" class="iconImg" alt="coin" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'🪙')"> I got it</button>
+          <button class="bad" id="btnDown"><img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')"> Oops</button>
         </div>
       </section>
     </main>
@@ -748,7 +890,7 @@ main > section.card{
           <div class="small" id="modeHint">—</div>
           <div class="seg">
             <button id="modeAll" class="active">All words</button>
-            <button id="modeFailed">Failed only (💩)</button>
+            <button id="modeFailed">Failed only (<img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">)</button>
           </div>
         </div>
 
@@ -791,7 +933,7 @@ main > section.card{
 
         <div class="tabs">
           <button class="tabBtn active" id="tabAll">All words (band)</button>
-          <button class="tabBtn" id="tabBad">Failed (💩) (band)</button>
+          <button class="tabBtn" id="tabBad">Failed (<img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">) (band)</button>
         </div>
 
         <input class="search" id="searchBox" placeholder="Search…" />
@@ -1375,6 +1517,43 @@ const WORDS = [
   "undertake","unpredictable","unicellular","virtual","vivid","viviparous","vow","wagged","war","wavy",
   "weapon","werewolf","which","wildlife","wind energy","womb","wonderful","wring","yearly","zygote"
 ];
+// --- Consistent icons (PNG) with fallback to native emoji ---
+const ICON_COIN_SRC = "img/coin.png";
+const ICON_POO_SRC  = "img/poo.png";
+
+// Returns an <img> tag that falls back to emoji if the image fails to load.
+function iconCoinHTML(cls="iconImg"){
+  return `<img src="${ICON_COIN_SRC}" class="${cls}" alt="coin" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'🪙')">`;
+}
+function iconPooHTML(cls="iconImg"){
+  return `<img src="${ICON_POO_SRC}" class="${cls}" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">`;
+}
+
+
+// --- PNG icon fallback (avoids broken-image glyph; keeps sizes consistent) ---
+function iconFallback(img, emoji){
+  try{ img.style.opacity = 0; }catch(e){}
+  const span = document.createElement('span');
+  let kind = 'inline';
+  if (img && img.closest && img.closest('#statsPills')) kind = 'pill';
+  else if (img && (img.classList.contains('flyIconImg') || img.closest('.coinFly,.poopFly'))) kind = 'fly';
+  span.className = `emojiIcon emoji-${kind}`;
+  span.textContent = emoji;
+  span.setAttribute('aria-hidden','true');
+  img.replaceWith(span);
+}
+(function initIconImgs(){
+  window.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('img.iconImg, img.statIconImg, img.flyIconImg').forEach(img=>{
+      // If already loaded from cache, mark as loaded (avoid staying invisible)
+      if (img.complete && img.naturalWidth > 0){
+        img.classList.add('loaded');
+        img.style.opacity = 1;
+      }
+    });
+  });
+})();
+
 
 // Help dictionary: word -> {def, ex}
 const HELP = Object.create(null);
@@ -1408,10 +1587,31 @@ function silentActivation(){
   if(voicesActivated) return;
   voicesActivated = true;
 
-  const silent = new SpeechSynthesisUtterance(" ");
-  silent.volume = 0;
-  silent.lang = VOICE_LANG;
-  window.speechSynthesis.speak(silent);
+  // Unlock speech synthesis on iOS
+  try{
+    const silent = new SpeechSynthesisUtterance(" ");
+    silent.volume = 0;
+    silent.lang = VOICE_LANG;
+    window.speechSynthesis.speak(silent);
+  }catch(e){}
+
+  // Unlock WebAudio on iOS (first coin sound should work on first tap)
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(AudioCtx){
+      if(!coinCtx) coinCtx = new AudioCtx();
+      if(coinCtx.state === "suspended"){
+        coinCtx.resume().catch(()=>{});
+      }
+      // Tiny silent blip to fully unlock output on some iOS versions
+      const o = coinCtx.createOscillator();
+      const g = coinCtx.createGain();
+      g.gain.value = 0.00001;
+      o.connect(g); g.connect(coinCtx.destination);
+      o.start();
+      o.stop(coinCtx.currentTime + 0.02);
+    }
+  }catch(e){}
 }
 
 
@@ -1800,6 +2000,7 @@ hardSet = new Set(loadHardWords(userKey));
   lastCombo5At = 0;
   lastCombo10At = 0;
   lastCombo20At = 0;
+  lastCombo40At = 0;
   saveStats(currentUser, stats);
 renderAwards();
 
@@ -1918,7 +2119,7 @@ function clearFailsForUser(){
   rebuildDeck();
   updatePills();
   renderList();
-  setStatus("Cleared 💩 list");
+  setStatus("Cleared poops  list");
 }
 
 function buildUnlockedFromLevel(level){
@@ -1977,8 +2178,8 @@ function adminAwardsWithPassword(){
 
   if(c === "2"){
     // Set custom values
-    const newCoins = clampNonNegInt(prompt("Set 🪙 coins (correct answers):", String(stats.correct || 0)));
-    const newPoops = clampNonNegInt(prompt("Set 💩 poops (wrong answers):", String(stats.wrong || 0)));
+    const newCoins = clampNonNegInt(prompt("Set coins (correct answers):", String(stats.correct || 0)));
+    const newPoops = clampNonNegInt(prompt("Set poops (wrong answers):", String(stats.wrong || 0)));
 
     // Premios: nivel 0..5 (según AWARDS)
     const maxLevel = AWARDS.length;
@@ -2005,7 +2206,7 @@ String(levelDefault)
     newLevel = clampNonNegInt(newLevel);
     if(newLevel > maxLevel) newLevel = maxLevel;
 
-    const clearFails = prompt("Clear 💩 failed-words list too? (y/n)", "n");
+    const clearFails = prompt("Clear poops  failed-words list too? (y/n)", "n");
     const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
 
     stats.correct = newCoins;
@@ -2026,7 +2227,7 @@ String(levelDefault)
 
     renderAwards();
     updatePills();
-    setStatus(`Admin: set 🪙${newCoins} 💩${newPoops} awards:${newLevel}/${maxLevel}`);
+    setStatus(`Admin: set coins ${newCoins} poops ${newPoops} awards:${newLevel}/${maxLevel}`);
     return;
   }
 
@@ -2089,8 +2290,8 @@ function adminAwardsWithPassword(){
 
   if(c === "2"){
     // Set custom values
-    const newCoins = clampNonNegInt(prompt("Set 🪙 coins (correct answers):", String(stats.correct || 0)));
-    const newPoops = clampNonNegInt(prompt("Set 💩 poops (wrong answers):", String(stats.wrong || 0)));
+    const newCoins = clampNonNegInt(prompt("Set coins (correct answers):", String(stats.correct || 0)));
+    const newPoops = clampNonNegInt(prompt("Set poops (wrong answers):", String(stats.wrong || 0)));
 
     // Premios: nivel 0..5 (según AWARDS)
     const maxLevel = AWARDS.length;
@@ -2117,7 +2318,7 @@ String(levelDefault)
     newLevel = clampNonNegInt(newLevel);
     if(newLevel > maxLevel) newLevel = maxLevel;
 
-    const clearFails = prompt("Clear 💩 failed-words list too? (y/n)", "n");
+    const clearFails = prompt("Clear poops  failed-words list too? (y/n)", "n");
     const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
 
     stats.correct = newCoins;
@@ -2138,7 +2339,7 @@ String(levelDefault)
 
     renderAwards();
     updatePills();
-    setStatus(`Admin: set 🪙${newCoins} 💩${newPoops} awards:${newLevel}/${maxLevel}`);
+    setStatus(`Admin: set coins ${newCoins} poops ${newPoops} awards:${newLevel}/${maxLevel}`);
     return;
   }
 
@@ -2166,7 +2367,7 @@ function syncModeUI(){
   if(isAll){
     modeHint.textContent = "Practise all words (inside the band).";
   }else{
-    modeHint.textContent = "Practise only 💩 words (inside the band).";
+    modeHint.textContent = "Practise only poops  words (inside the band).";
   }
 }
 
@@ -2867,11 +3068,41 @@ function playCoin(){
 }
 
 
-function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = 52){
+
+function getIconSizePx(el, fallback = 52){
+  try{
+    if(!el) return fallback;
+
+    // Prefer the actual icon element (<img> or emoji <span>) inside the target
+    let icon = null;
+    if(el.querySelector){
+      icon = el.querySelector("img") || el.querySelector(".emoji-pill") || el.querySelector(".emojiIcon") || el.querySelector(".statIcon");
+    }
+    const probe = icon || el;
+
+    if(probe && probe.getBoundingClientRect){
+      const r = probe.getBoundingClientRect();
+      const w = Math.max(r.width || 0, r.height || 0);
+      if(w > 0) return w;
+    }
+
+    // Fallback to computed width/font-size
+    const cs = getComputedStyle(probe);
+    const cw = parseFloat(cs.width);
+    if(!isNaN(cw) && cw > 0) return cw;
+
+    const fs = parseFloat(cs.fontSize);
+    return isNaN(fs) ? fallback : fs;
+  }catch{
+    return fallback;
+  }
+}
+
+function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pillIcon')) || 64)){
   try{
     const coin = document.createElement("div");
     coin.className = "coinFly";
-    coin.textContent = "🪙";
+    coin.innerHTML = iconCoinHTML("flyIconImg");
 
     // centrar el emoji (usa el tamaño inicial)
     const half = startSizePx / 2;
@@ -2909,7 +3140,7 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = 52){
 function flyCoinCombo(n, intervalMs){
   const fromEl = document.getElementById("wordBox") || document.getElementById("btnUp");
   const toPill = document.getElementById("goodPill");
-  const toEl = toPill ? (toPill.querySelector(".statIcon") || toPill) : null;
+  const toEl = toPill ? (toPill.querySelector("img") || toPill.querySelector(".emoji-pill") || toPill.querySelector(".emojiIcon") || toPill.querySelector(".statIcon") || toPill) : null;
 
   const count = Math.max(1, n|0);
   const step = Math.max(0, intervalMs|0);
@@ -2932,12 +3163,7 @@ function flyCoinCombo(n, intervalMs){
   const x1 = b.left + b.width  * 0.50 + ox;
   const y1 = b.top  + b.height * 0.50 + oy;
 
-  const endSize = (() => {
-    try{
-      const fs = parseFloat(getComputedStyle(toEl).fontSize);
-      return isNaN(fs) ? 52 : fs;
-    }catch{ return 52; }
-  })();
+  const endSize = getIconSizePx(toPill || toEl, 52);
 
   for(let i=0;i<count;i++){
     setTimeout(()=>{
@@ -2967,6 +3193,11 @@ function showComboBanner(type){
       <div class="line1">Unstoppable! 🚀</div>
       <div class="line2">20 in a row!</div>
       <div class="line3">+10 Coins Bonus</div>`;
+  } else if(type === 40){
+    el.innerHTML = `
+      <div class="line1">LEGENDARY! ✨</div>
+      <div class="line2">40 in a row!</div>
+      <div class="line3">+30 Coins Bonus</div>`;
   } else {
     return;
   }
@@ -2982,7 +3213,10 @@ function flyPoop(fromEl, toEl){
     if(!fromEl || !toEl) return;
 
     const a = fromEl.getBoundingClientRect();
-    const b = toEl.getBoundingClientRect();
+
+    // If a pill is passed, target its actual icon (img or emoji span) for positioning/sizing
+    const dest = (toEl.querySelector ? (toEl.querySelector("img") || toEl.querySelector(".emoji-pill") || toEl.querySelector(".emojiIcon") || toEl.querySelector(".statIcon")) : null) || toEl;
+    const b = dest.getBoundingClientRect();
 
     const vv = window.visualViewport;
     const ox = vv ? (vv.offsetLeft || 0) : 0;
@@ -2994,13 +3228,19 @@ function flyPoop(fromEl, toEl){
     const x1 = b.left + b.width  * 0.50 + ox;
     const y1 = b.top  + b.height * 0.50 + oy;
 
+    const startSize = 48;
+    const endSize = getIconSizePx(dest, (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pillIcon')) || 64));
+    const endScale = Math.max(0.2, endSize / startSize);
+
     const poop = document.createElement("div");
     poop.className = "poopFly";
-    poop.textContent = "💩";
+    poop.innerHTML = iconPooHTML("flyIconImg");
 
-    // Centro exacto (sin -14)
+    // exact center (we animate with translate(-50%,-50%))
     poop.style.left = x0 + "px";
     poop.style.top  = y0 + "px";
+    poop.style.width  = startSize + "px";
+    poop.style.height = startSize + "px";
 
     document.body.appendChild(poop);
 
@@ -3013,7 +3253,7 @@ function flyPoop(fromEl, toEl){
     const anim = poop.animate([
       { transform: "translate(-50%,-50%) translate(0,0) scale(1)", opacity: 1, offset: 0 },
       { transform: `translate(-50%,-50%) translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.1) rotate(20deg)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(-50%,-50%) translate(${(x1-x0)}px, ${(y1-y0)}px) scale(0.6) rotate(0deg)`, opacity: 0.0, offset: 1 }
+      { transform: `translate(-50%,-50%) translate(${(x1-x0)}px, ${(y1-y0)}px) scale(${endScale}) rotate(0deg)`, opacity: 0.0, offset: 1 }
     ], {
       duration: 850,
       easing: "cubic-bezier(.25,.85,.3,1)"
@@ -3186,9 +3426,177 @@ function revealWordLetterByLetter(){
     if(i >= letters.length){
       clearInterval(revealTimer);
       revealTimer = null;
-      //setStatus("Mark it 🪙 / 💩");
+      //setStatus("Mark it / poops ");
     }
   }, 140);
+}
+
+
+
+/* =========================
+   Word disintegration (particles)
+   ========================= */
+const fxCanvas = document.getElementById("wordFx");
+const fxCtx = fxCanvas ? fxCanvas.getContext("2d") : null;
+
+function fxResize(){
+  if(!fxCanvas || !fxCtx) return;
+  // handle DPR for crisp particles
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  fxCanvas.width  = Math.floor(window.innerWidth  * dpr);
+  fxCanvas.height = Math.floor(window.innerHeight * dpr);
+  fxCanvas.style.width  = "100vw";
+  fxCanvas.style.height = "100vh";
+  fxCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", fxResize, {passive:true});
+fxResize();
+
+function prefersReducedMotion(){
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function drawTextWithLetterSpacing(ctx, text, xCenter, yBaseline, font, letterSpacingPx){
+  ctx.font = font;
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  const letters = Array.from(text);
+  // measure per char to honor letter spacing approximately
+  const widths = letters.map(ch => ctx.measureText(ch).width);
+  const total = widths.reduce((a,b)=>a+b,0) + Math.max(0, letters.length-1) * letterSpacingPx;
+  let x = xCenter - total/2;
+  for(let i=0;i<letters.length;i++){
+    ctx.fillText(letters[i], x, yBaseline);
+    x += widths[i] + letterSpacingPx;
+  }
+}
+
+function disintegrateWordParticles(el){
+  if(!fxCanvas || !fxCtx || !el) return;
+  if(prefersReducedMotion()){
+    // small pop + fade only
+    el.animate([{transform:"scale(1)", opacity:1},{transform:"scale(1.03)", opacity:1},{transform:"scale(0.98)", opacity:0.15}], {duration:260, easing:"ease-out"});
+    return;
+  }
+
+  const text = (el.textContent || "").trim();
+  if(!text || text === "• • •") return;
+
+  const r = el.getBoundingClientRect();
+  // Prepare offscreen canvas for sampling
+  const off = document.createElement("canvas");
+  const offCtx = off.getContext("2d");
+
+  const pad = 12;
+  const w = Math.ceil(r.width) + pad*2;
+  const h = Math.ceil(r.height) + pad*2;
+  off.width = w;
+  off.height = h;
+
+  const cs = getComputedStyle(el);
+  const fontSize = parseFloat(cs.fontSize) || 48;
+  const fontWeight = cs.fontWeight || "900";
+  const fontFamily = cs.fontFamily || "system-ui";
+  const letterSpacing = parseFloat(cs.letterSpacing) || 0;
+  const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+  offCtx.clearRect(0,0,w,h);
+  offCtx.fillStyle = "#ffffff";
+  offCtx.textBaseline = "alphabetic";
+
+  // baseline: vertically center-ish
+  const y = h/2 + fontSize*0.35;
+
+  drawTextWithLetterSpacing(offCtx, text, w/2, y, font, letterSpacing);
+
+  const img = offCtx.getImageData(0,0,w,h).data;
+
+  // Build particles from sampled pixels
+  const particles = [];
+  const maxParticles = 450;
+  const step = 3; // sampling stride in px
+  for(let yy=0; yy<h; yy+=step){
+    for(let xx=0; xx<w; xx+=step){
+      const a = img[(yy*w + xx)*4 + 3];
+      if(a > 80){
+        particles.push({x: xx, y: yy});
+      }
+    }
+  }
+  if(!particles.length) return;
+
+  // downsample if too many
+  while(particles.length > maxParticles){
+    particles.splice(Math.floor(Math.random()*particles.length), 1);
+  }
+
+  // Map particles to viewport coords
+  const originX = r.left - pad;
+  const originY = r.top  - pad;
+
+  // show fx canvas
+  fxCanvas.style.display = "block";
+
+  // hide original word quickly
+  el.style.visibility = "hidden";
+
+  // animate particles
+  const start = performance.now();
+  const duration = 700;
+  const drift = 0.18;   // subtle drift (stay near the word)
+  const gravity = 0;      // no falling
+
+  // precompute velocity (very subtle — mostly fade in place)
+  for(const p of particles){
+    // tiny jitter so it feels like dust, but doesn't fly away
+    p.vx = (Math.random()-0.5) * 0.18;
+    p.vy = (Math.random()-0.5) * 0.18;
+    p.life = Math.random()*0.25 + 0.75;
+  }
+
+  function frame(t){
+    const dt = t - start;
+    const k = Math.min(1, dt / duration);
+    fxCtx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+    // fade out
+    //const alpha = Math.max(0, 1 - k * 1.6);
+	const alpha = 1 - k;
+    fxCtx.globalAlpha = alpha;
+    fxCtx.fillStyle = getComputedStyle(el).color || "#ffd166";
+
+    // particle size shrinks slightly
+    const size = 2.2 - k*0.8;
+
+    for(const p of particles){
+      const px = originX + p.x + p.vx * dt * drift;
+      const py = originY + p.y + (p.vy * dt * drift) + (dt*dt*gravity);
+      fxCtx.fillRect(px, py, size, size);
+    }
+
+    fxCtx.globalAlpha = 1;
+
+    if(dt < duration){
+      requestAnimationFrame(frame);
+    }else{
+      fxCtx.clearRect(0,0,window.innerWidth, window.innerHeight);
+      fxCanvas.style.display = "none";
+      el.style.visibility = "visible";
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+
+
+function playWrongWordFX(){
+  const el = document.getElementById("wordBox");
+  if(!el) return;
+  // restart animation even if user fails twice quickly
+  el.classList.remove("wrongFX");
+  void el.offsetWidth;
+  el.classList.add("wrongFX");
+  setTimeout(()=>{ try{ el.classList.remove("wrongFX"); }catch(e){} }, 650);
 }
 
 
@@ -3207,6 +3615,7 @@ if(hardSet.has(w)){
     //setStatus("Nice! ✅");
   } else {
     // Fail feedback
+    playWrongWordFX();
     popHardPill();
     playFail();
     flyPoop((document.getElementById("wordBox")||document.getElementById("btnDown")), document.getElementById("hardPill"));
@@ -3224,45 +3633,57 @@ if(hardSet.has(w)){
 
   if(gotIt){
     stats.streak++;
-// Coin combos:
-// - 5,15,25...  => +3 coins
-// - 10,30,50... => +5 coins
-// - 20,40,60... => +10 coins
-// Priority: 20 > 10 > 5 (never stack in the same answer)
-let comboN = 1;
+// Coin rewards (exclusive tiers, never stack):
+// - 40,80,120... => +30 coins  (BONUS 40)
+// - 20,60,100... => +10 coins
+// - 10,30,50...  => +5 coins
+// - 5,15,25...   => +3 coins
+// otherwise      => +1 coin
+let awardCoins = 1;     // what we ADD to stats.correct
+let visualCoins = 1;    // how many flying coins we show (capped for performance)
 let intervalMs = 0;
 
-if(stats.streak % 20 === 0 && stats.streak !== lastCombo20At){
-  comboN = 10;
+// Highest priority first
+if(stats.streak % 40 === 0 && stats.streak !== lastCombo40At){
+  awardCoins = 30;
+  visualCoins = Math.min(30, awardCoins);
+  intervalMs = 130;
+  lastCombo40At = stats.streak;
+  showComboBanner(40);
+} else if(stats.streak % 20 === 0 && stats.streak !== lastCombo20At){
+  awardCoins = 10;
+  visualCoins = awardCoins;
   intervalMs = 140;
   lastCombo20At = stats.streak;
-
-      showComboBanner(20);
+  showComboBanner(20);
 } else if(stats.streak % 10 === 0 && stats.streak !== lastCombo10At){
-  comboN = 5;
+  awardCoins = 5;
+  visualCoins = awardCoins;
   intervalMs = 160;
   lastCombo10At = stats.streak;
-
-      showComboBanner(10);
+  showComboBanner(10);
 } else if(stats.streak % 5 === 0 && stats.streak !== lastCombo5At){
-  comboN = 3;
+  awardCoins = 3;
+  visualCoins = awardCoins;
   intervalMs = 180;
   lastCombo5At = stats.streak;
-
-      showComboBanner(5);
+  showComboBanner(5);
 }
 
-flyCoinCombo(comboN, intervalMs);
+flyCoinCombo(visualCoins, intervalMs);
 
-    // Add coins to the counter (1 normally, 3 at 5-milestone, 5 at 10-milestone)
-    stats.correct += comboN;
+    // Word disintegration effect
+    try{ disintegrateWordParticles(elWordBox); }catch(e){}
+
+    // Add coins to the counter
+    stats.correct += awardCoins;
 }else{
     stats.wrong++;
     stats.streak = 0;
     lastCombo5At = 0;
     lastCombo10At = 0;
     lastCombo20At = 0;
-    lastCombo20At = 0;
+    lastCombo40At = 0;
   }
   saveStats(currentUser, stats);
   renderAwards();
@@ -3277,7 +3698,7 @@ flyCoinCombo(comboN, intervalMs);
     elPrimaryControls.style.display = "flex";
     elWordBox.textContent = "• • •";
     pickNewWord(false);
-  }, 280);
+  }, 360);
 }
 
 function openMenu(){
@@ -3315,7 +3736,7 @@ function renderList(){
 
   const title = activeTab === "all"
     ? `All words in band (${hi-lo+1})`
-    : `Failed (💩) in band (${list.length})`;
+    : `Failed in band (${list.length})`;
 
   if(list.length === 0){
     elListBox.innerHTML = `<b>${title}</b><br><br>` + (activeTab === "bad" ? "Empty ✅" : "No match.");
@@ -3327,7 +3748,7 @@ function renderList(){
     list.map(x => `
       <div class="listItem" data-w="${encodeURIComponent(x.w)}" title="Tap to hear pronunciation">
         <div>${x.n}. ${escapeHtml(x.w)}</div>
-        <div>${x.failed ? `<span class="tagBad">💩</span>` : `<span class="tagOk">✓</span>`}</div>
+        <div>${x.failed ? `<span class="tagBad"> <img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')"> </span>` : `<span class="tagOk">✓</span>`}</div>
       </div>
     `).join("");
 }
@@ -3335,7 +3756,7 @@ function renderList(){
 function updatePills(){
   if(!currentUser){
     elRangePill.textContent = `Range: —`;
-    elHardPill.innerHTML = `<div class="statIcon">💩</div><div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
+    elHardPill.innerHTML = `${iconPooHTML("statIconImg")}<div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
     return;
   }
   elRangePill.textContent = `${band.from}–${band.to}`;
@@ -3344,10 +3765,10 @@ function updatePills(){
   const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
   let failedInBand = 0;
   for(let i=lo;i<=hi;i++) if(hardSet.has(WORDS[i])) failedInBand++;
-  elHardPill.innerHTML = `<div class="statIcon">💩</div><div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
+  elHardPill.innerHTML = `${iconPooHTML("statIconImg")}<div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
   rangeLabel.textContent = `${band.from}–${band.to}`;
-  // 🪙 correct counter
-  if(elGoodPill){ elGoodPill.innerHTML = `<div class="statIcon">🪙</div><div class="statNum">${(stats && stats.correct) ? stats.correct : 0}</div>`; }
+  // correct counter
+  if(elGoodPill){ elGoodPill.innerHTML = `${iconCoinHTML("statIconImg")}<div class="statNum">${(stats && stats.correct) ? stats.correct : 0}</div>`; }
 }
 
 /* Storage keys (per user) */
