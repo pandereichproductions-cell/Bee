@@ -804,15 +804,36 @@ main > section.card{
   animation: wrongFlash 520ms ease-out, wrongShake 380ms ease-out;
 }
 
+/* iOS Safari stability for emoji fallback: avoid filter-based compositing glitches */
+body.emojiMode .coinFly,
+body.emojiMode .poopFly{
+  filter: none !important;
+}
+body.emojiMode .emoji-fly{
+  text-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
 
-    /* iOS Safari stability for emoji fallback: avoid filter-based compositing glitches */
-    body.emojiMode .coinFly,
-    body.emojiMode .poopFly{
-      filter: none !important;
-    }
-    body.emojiMode .emoji-fly{
-      text-shadow: 0 6px 18px rgba(0,0,0,.25);
-    }
+/* Hide range pill completely */
+#rangePill{
+  display: none !important;
+}
+
+/* Shorter "I got it" / "Oops" buttons */
+#markRow .good,
+#markRow .bad{
+  min-width: 120px;      /* antes ~160px */
+  padding: 12px 14px;    /* menos ancho */
+  font-size: 15px;       /* opcional */
+}
+/* Shorter Listen / Show buttons */
+#primaryControls .primary,
+#primaryControls #btnShow{
+  min-width: 120px;     /* antes eran más largos */
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
+
 
   </style>
 </head>
