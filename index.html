@@ -414,8 +414,9 @@
     }
     .award.locked{
       filter: grayscale(1);
-      opacity: .35;
+      opacity: .4;
     }
+
     .award.unlocked{
       opacity: 1;
     }
@@ -423,7 +424,6 @@
       transform: scale(1.14);
     }
 
-    
     .awardImg{
       width: 30px;
       height: 30px;
@@ -434,6 +434,11 @@
       font-size: 22px;
       line-height: 1;
     }
+	
+	/* Make Mystery "?" more visible even when award is locked */
+	.award.locked .mysteryIcon{
+	  color: #ffffff;
+	}
 
     /* Award zoom-to-center overlay (Diamond Bee celebration) */
     .awardZoomOverlay{
@@ -1801,7 +1806,7 @@ const AWARDS = [
     id:"diamond",
     need: 3000,
     label:"Diamond Bee",
-    lockedHTML: '<span class="mysteryIcon" aria-label="Mystery award">❓</span>',
+    lockedHTML: '<span class="mysteryIcon" aria-label="Mystery award">❔</span>',
     unlockedHTML: '<img class="awardImg" src="img/Bee_Diamond.png" alt="Diamond Bee" onerror="this.outerHTML=\'🐝\';" />'
   }
 ];
@@ -1983,19 +1988,27 @@ function checkAwardsAndCelebrate(){
     renderAwards();
     if(lastUnlocked) popAward(lastUnlocked);
 
-	if(lastUnlocked === "diamond"){
-	  launchFireworks();
-	  playRewardCelebration();
+    if(lastUnlocked === "diamond"){
+      launchFireworks();
+      playRewardCelebration();
 
-	  const msg = "Congratulations! You have achieved the Diamond Bee — the highest award possible!";
-	  showAwardMessage(msg);
-	  speakText(msg);
+      const msg = "Congratulations! You have achieved the Diamond Bee — the highest award possible!";
+      showAwardMessage(msg);
+      speakText(msg);
 
-	  requestAnimationFrame(() => zoomAwardToCenter("diamond", 5000)); // 👈 CLAVE
-	}else{
-	  launchConfetti();
-	  playRewardCelebration();
-	}
+      requestAnimationFrame(() => zoomAwardToCenter("diamond", 5000)); // 👈 CLAVE
+    }else{
+      launchConfetti();
+      playRewardCelebration();
+
+      // Speak + show unlock message for ALL non-diamond awards
+      const a = AWARDS.find(x => x.id === lastUnlocked);
+      const msg = a
+        ? `${a.label} unlocked! You achieved ${a.need} coins. Great job!`
+        : "New award unlocked! Great job!";
+      showAwardMessage(msg);
+      speakText(msg);
+    }
 
   }
 }
