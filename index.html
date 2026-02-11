@@ -423,7 +423,53 @@
       transform: scale(1.14);
     }
 
-    .confetti{
+    
+    .awardImg{
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      display:block;
+    }
+    .mysteryIcon{
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    /* Award zoom-to-center overlay (Diamond Bee celebration) */
+    .awardZoomOverlay{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6000;
+      display: none;
+    }
+    .awardZoomItem{
+      position: fixed;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:14px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 22px 70px rgba(0,0,0,.58);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transform: translate(0px,0px) scale(1);
+      will-change: transform;
+    }
+    .awardZoomImg{
+      width: 78%;
+      height: 78%;
+      object-fit: contain;
+      display:block;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.45));
+    }
+    .awardZoomEmoji{
+      font-size: 72px;
+      line-height: 1;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.45));
+    }
+.confetti{
       position: fixed;
       inset: 0;
       width: 100vw;
@@ -563,13 +609,6 @@
 
 
 /* TOP stats pills: always big (even after JS rebuilds) */
-#statsPills img{
-  width: var(--pillIcon) !important;
-  height: var(--pillIcon) !important;
-  max-width: none !important;
-  max-height: none !important;
-  vertical-align: 0;
-}
 /* TOP stats emoji fallback size */
 #statsPills .emojiIcon{
   display:flex;
@@ -645,15 +684,6 @@ main > section.card{
 
 
 /* Stats pills: big emoji + number underneath */
-.statPill{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:10px 12px;
-  min-width: 74px;
-}
 .statPill .statIcon{
   font-size: 52px;
   line-height: 1;
@@ -667,14 +697,6 @@ main > section.card{
 
 
 /* Hide pill chrome, keep icon + number */
-.statPill{
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-  padding: 4px 6px !important;
-}
-
-
 /* Combo banner */
 #comboBanner{
   position: fixed;
@@ -741,15 +763,6 @@ main > section.card{
 }
 
 /* force the TOP stats pill icons to stay big (even after JS rebuilds pills) */
-#statsPills img{
-  width: var(--pillIcon) !important;
-  height: var(--pillIcon) !important;
-  max-width: none !important;
-  max-height: none !important;
-  vertical-align: -10px;
-}
-
-
 /* Emoji fallback inside TOP stats pills: force same size as PNG */
 #statsPills .emojiIcon.emoji-pill{
   width: var(--pillIcon) !important;
@@ -833,7 +846,26 @@ body.emojiMode .emoji-fly{
   font-size: 15px;
 }
 
-
+    /* ---- Consolidated (Bee46): remove duplicate overrides ---- */
+    #statsPills img{
+      width: var(--pillIcon) !important;
+      height: var(--pillIcon) !important;
+      max-width: none !important;
+      max-height: none !important;
+      vertical-align: -10px;
+    }
+    .statPill{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-width: 74px;
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      padding: 4px 6px;
+    }
 
   </style>
 </head>
@@ -1758,11 +1790,20 @@ function saveStats(user, stats){
 let stats = { correct:0, wrong:0, streak:0, unlocked:{} };
 
 const AWARDS = [
-  { id:"bronze", need: 20,  icon:"🥉", label:"Bronze Medal" },
-  { id:"silver", need: 50, icon:"🥈", label:"Silver Medal" },
-  { id:"gold",   need: 150, icon:"🥇", label:"Gold Medal" },
-  { id:"trophy", need: 350, icon:"🏆", label:"Trophy" },
-  { id:"crown",  need: 1000, icon:"👑", label:"Golden Crown" }
+  { id:"bronze",  need: 20,   icon:"🥉", label:"Bronze Medal" },
+  { id:"silver",  need: 50,   icon:"🥈", label:"Silver Medal" },
+  { id:"gold",    need: 150,  icon:"🥇", label:"Gold Medal" },
+  { id:"trophy",  need: 350,  icon:"🏆", label:"Trophy" },
+  { id:"crown",   need: 1000, icon:"👑", label:"Golden Crown" },
+
+  // NEW: Mystery final award (PNG revealed after unlock)
+  {
+    id:"diamond",
+    need: 3000,
+    label:"Diamond Bee",
+    lockedHTML: '<span class="mysteryIcon" aria-label="Mystery award">❓</span>',
+    unlockedHTML: '<img class="awardImg" src="img/Bee_Diamond.png" alt="Diamond Bee" onerror="this.outerHTML=\'🐝\';" />'
+  }
 ];
 
 const awardsRow = document.getElementById("awardsRow");
@@ -1772,7 +1813,11 @@ function renderAwards(){
   awardsRow.innerHTML = AWARDS.map(a => {
     const ok = !!stats.unlocked[a.id];
     const cls = ok ? "award unlocked" : "award locked";
-    return `<div class="${cls}" data-award="${a.id}" title="${a.label}">${a.icon}</div>`;
+    const title = ok ? a.label : "Mystery Award";
+    const iconHTML = ok
+      ? (a.unlockedHTML || a.icon || "⭐")
+      : (a.lockedHTML || a.icon || "❓");
+    return `<div class="${cls}" data-award="${a.id}" title="${title}">${iconHTML}</div>`;
   }).join("");
 }
 
@@ -1793,14 +1838,22 @@ awardsRow && awardsRow.addEventListener("click", (e)=>{
   const award = AWARDS.find(a => a.id === id);
   if(!award) return;
 
-  const correct = stats.correct || 0;
+  const coins = stats.correct || 0;
   const unlocked = !!stats.unlocked[id];
 
   let message = "";
   if(unlocked){
-    message = `${award.label} unlocked! You achieved ${award.need} coins. Great job!`;
+    if(id === "diamond"){
+      message = `You got the Diamond Bee!`;
+    }else{
+      message = `${award.label} unlocked! You achieved ${award.need} coins. Great job!`;
+    }
   }else{
-    message = `You need ${award.need} coins to unlock this reward. You currently have ${correct}.`;
+    if(id === "diamond"){
+      message = `Mystery Award: You need ${award.need} coins to unlock it. You currently have ${coins}.`;
+    }else{
+      message = `You need ${award.need} coins to unlock this reward. You currently have ${coins}.`;
+    }
   }
 
   showAwardMessage(message);
@@ -1812,6 +1865,105 @@ function popAward(id){
   if(!el) return;
   el.classList.add("pop");
   setTimeout(()=> el.classList.remove("pop"), 260);
+}
+
+
+function zoomAwardToCenter(id, holdMs=5000){
+  const src = document.querySelector(`.award[data-award="${id}"]`);
+  if(!src) return;
+
+  let overlay = document.getElementById("awardZoomOverlay");
+  if(!overlay){
+    overlay = document.createElement("div");
+    overlay.id = "awardZoomOverlay";
+    overlay.className = "awardZoomOverlay";
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = "";
+  overlay.style.display = "block";
+
+  const rect = src.getBoundingClientRect();
+
+  const item = document.createElement("div");
+  item.className = "awardZoomItem";
+  item.style.left = Math.round(rect.left) + "px";
+  item.style.top  = Math.round(rect.top)  + "px";
+
+  
+  item.style.width = rect.width + "px";
+  item.style.height = rect.height + "px";
+
+  const img = src.querySelector("img");
+  if(img){
+	  const ci = img.cloneNode(true);
+	  ci.className = "awardZoomImg";
+
+	  // Fallback del zoom si la imagen falla
+	  ci.onerror = () => {
+		const span = document.createElement("span");
+		span.className = "awardZoomEmoji";
+		span.textContent = "🐝";
+		ci.replaceWith(span);
+	  };
+
+	  // Mejora nitidez en Safari
+	  ci.style.transform = "translateZ(0)";
+	  ci.style.backfaceVisibility = "hidden";
+
+	  item.appendChild(ci);
+
+	}else{
+	  const span = document.createElement("span");
+	  span.className = "awardZoomEmoji";
+	  span.textContent = (src.textContent || "🐝").trim() || "🐝";
+	  item.appendChild(span);
+	}
+
+
+  overlay.appendChild(item);
+
+  // fuerza layout
+  item.getBoundingClientRect();
+
+  const inMs = 450;
+  const outMs = 450;
+
+  const targetSize = Math.min(window.innerWidth, window.innerHeight) * 0.38;
+  const w = Math.max(rect.width, targetSize);
+  const h = Math.max(rect.height, targetSize);
+
+  const leftTarget = Math.round((window.innerWidth  - w) / 2);
+const topTarget  = Math.round((window.innerHeight - h) / 2);
+
+
+  // Animar por geometría (no por transform scale) => más nítido
+  item.style.transition = `left ${inMs}ms cubic-bezier(.2,.9,.2,1),
+                           top ${inMs}ms cubic-bezier(.2,.9,.2,1),
+                           width ${inMs}ms cubic-bezier(.2,.9,.2,1),
+                           height ${inMs}ms cubic-bezier(.2,.9,.2,1)`;
+
+  item.style.left = leftTarget + "px";
+  item.style.top = topTarget + "px";
+  item.style.width = w + "px";
+  item.style.height = h + "px";
+
+  setTimeout(() => {
+    item.style.transition = `left ${outMs}ms cubic-bezier(.4,0,.2,1),
+                             top ${outMs}ms cubic-bezier(.4,0,.2,1),
+                             width ${outMs}ms cubic-bezier(.4,0,.2,1),
+                             height ${outMs}ms cubic-bezier(.4,0,.2,1)`;
+
+   item.style.left = Math.round(rect.left) + "px";
+	item.style.top  = Math.round(rect.top)  + "px";
+
+    item.style.width = rect.width + "px";
+    item.style.height = rect.height + "px";
+  }, inMs + holdMs);
+
+  setTimeout(() => {
+    overlay.style.display = "none";
+    overlay.innerHTML = "";
+  }, inMs + holdMs + outMs + 80);
 }
 
 function checkAwardsAndCelebrate(){
@@ -1830,10 +1982,24 @@ function checkAwardsAndCelebrate(){
     saveStats(currentUser, stats);
     renderAwards();
     if(lastUnlocked) popAward(lastUnlocked);
-    launchConfetti();
-	playRewardCelebration();
+
+	if(lastUnlocked === "diamond"){
+	  launchFireworks();
+	  playRewardCelebration();
+
+	  const msg = "Congratulations! You have achieved the Diamond Bee — the highest award possible!";
+	  showAwardMessage(msg);
+	  speakText(msg);
+
+	  requestAnimationFrame(() => zoomAwardToCenter("diamond", 5000)); // 👈 CLAVE
+	}else{
+	  launchConfetti();
+	  playRewardCelebration();
+	}
+
   }
 }
+
 
 // Confetti (simple canvas burst)
 const confettiCanvas = document.getElementById("confetti");
@@ -1889,6 +2055,90 @@ function launchConfetti(){
   if(confettiRaf) cancelAnimationFrame(confettiRaf);
   confettiRaf = requestAnimationFrame(frame);
 }
+
+// Fireworks for the final award (uses the same canvas as confetti)
+function launchFireworks(){
+  if(!confettiCanvas) return;
+  const ctx = confettiCanvas.getContext("2d");
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+  confettiCanvas.style.display = "block";
+
+  const W = confettiCanvas.width, H = confettiCanvas.height;
+  const palette = ["#ffffff","#ffd166","#ff6b6b","#7aa7ff","#3ee08f","#ff9f1c","#b388ff"];
+  const particles = [];
+  const bursts = 36;              // number of fireworks
+  const particlesPerBurst = 56;   // density
+  const gravity = 0.06;
+
+  function burst(){
+    const x0 = Math.random()*W*0.9 + W*0.05;
+    const y0 = Math.random()*H*0.45 + H*0.08;
+    const base = palette[(Math.random()*palette.length)|0];
+
+    for(let i=0;i<particlesPerBurst;i++){
+      const ang = (Math.PI*2) * (i/particlesPerBurst) + (Math.random()-0.5)*0.25;
+      const sp = 2.2 + Math.random()*3.2;
+      particles.push({
+        x:x0, y:y0,
+        vx: Math.cos(ang)*sp,
+        vy: Math.sin(ang)*sp,
+        life: 90 + (Math.random()*55)|0,
+        r: 2 + Math.random()*2.2,
+        c: (Math.random()<0.35 ? "#ffffff" : base)
+      });
+    }
+  }
+
+  for(let i=0;i<bursts;i++){
+    setTimeout(burst, i*140);
+  }
+
+  let raf = null;
+  let frames = 0;
+
+  function frame(){
+    frames++;
+    ctx.clearRect(0,0,W,H);
+
+    // slight fade for trails
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    ctx.fillRect(0,0,W,H);
+
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.vy += gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life--;
+
+      const alpha = Math.max(0, Math.min(1, p.life/70));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+
+      if(p.life<=0 || p.x<-50 || p.x>W+50 || p.y<-50 || p.y>H+80){
+        particles.splice(i,1);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    if(frames < 720 || particles.length){
+      raf = requestAnimationFrame(frame);
+    }else{
+      confettiCanvas.style.display = "none";
+      ctx.clearRect(0,0,W,H);
+      if(raf) cancelAnimationFrame(raf);
+    }
+  }
+
+  // clear once before drawing trails
+  ctx.clearRect(0,0,W,H);
+  raf = requestAnimationFrame(frame);
+}
+
 
 window.addEventListener("resize", () => {
   if(confettiCanvas && confettiCanvas.style.display !== "none"){
@@ -2267,7 +2517,8 @@ function adminAwardsWithPassword(){
 2 = Silver
 3 = Gold
 4 = Trophy
-5 = Crown`,
+5 = Crown
+6 = Diamond Bee`,
 String(levelDefault)
     );
     if(newLevel === null) return;
@@ -2379,7 +2630,8 @@ function adminAwardsWithPassword(){
 2 = Silver
 3 = Gold
 4 = Trophy
-5 = Crown`,
+5 = Crown
+6 = Diamond Bee`,
 String(levelDefault)
     );
     if(newLevel === null) return;
