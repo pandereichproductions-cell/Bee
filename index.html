@@ -54,6 +54,7 @@
     .titles{ display:flex; flex-direction:column; gap:2px; }
     header h1{ margin:0; font-size:17px; letter-spacing:.5px; }
     header .subtitle{ font-size:12px; color:var(--muted); letter-spacing:.2px; }
+    .roundProgress{ font-size:12px; color:var(--muted); margin-top:4px; }
     .badge{
       font-size:12px;
       padding:6px 10px;
@@ -414,7 +415,7 @@
     }
     .award.locked{
       filter: grayscale(1);
-      opacity: .3;
+      opacity: .33;
     }
 
     .award.unlocked{
@@ -719,7 +720,7 @@ main > section.card{
   font-weight: 800;
 }
 #comboBanner.show{
-  animation: comboPop 2600ms ease-out forwards;
+  animation: comboPop 4200ms ease-out forwards;
 }
 #comboBanner .line1{ font-size: 22px; }
 #comboBanner .line2{ font-size: 18px; margin-top: 4px; }
@@ -884,6 +885,7 @@ body.emojiMode .emoji-fly{
         <div class="titles">
           <h1>SPELLING Bee 25–26</h1>
           <div class="subtitle">5th and 6th graders</div>
+          <div class="roundProgress" id="roundProgress" aria-live="polite">Round: —</div>
         </div>
         
       </div>
@@ -994,19 +996,22 @@ body.emojiMode .emoji-fly{
 
           <div class="btnRow" style="margin-top:10px;">
 </div>
-          <div class="btnRow" style="margin-top:10px;">
-            <button id="btnResetAwards">Reset awards 🔒</button>
-          </div>
-        </div>
-
-        <div class="tabs">
-          <button class="tabBtn active" id="tabAll">All words (band)</button>
-          <button class="tabBtn" id="tabBad">Failed (<img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">) (band)</button>
-        </div>
+          
+        </div>        
 
         <input class="search" id="searchBox" placeholder="Search…" />
 
         <div class="listBox" id="listBox"></div>
+		
+		<div class="tabs">
+          <button class="tabBtn active" id="tabAll">All words (band)</button>
+          <button class="tabBtn" id="tabBad">Failed (<img src="img/poo.png" class="iconImg" alt="poo" onload="this.classList.add('loaded');this.style.opacity=1" onerror="iconFallback(this,'💩')">) (band)</button>
+        </div>
+		
+		<div class="btnRow" style="margin-top:14px;">
+		  <button id="btnResetAwards">Admin 🔒</button>
+		</div>
+
 
         <p class="small" style="margin-top:12px;">
           Voice: English (UK). Progress is saved separately for each user on this device.
@@ -1663,6 +1668,33 @@ function iconFallback(img, emoji){
 // Help dictionary: word -> {def, ex}
 const HELP = Object.create(null);
 
+function stopAllPlayback() {
+  try {
+    // Stop HTMLAudio
+    if (htmlAudioEl) {
+      htmlAudioEl.pause();
+      htmlAudioEl.currentTime = 0;
+    }
+  } catch(e){}
+
+  try {
+    // Stop WebAudio
+    if (currentSource) {
+      currentSource.stop(0);
+      currentSource.disconnect();
+      currentSource = null;
+    }
+  } catch(e){}
+
+  try {
+    // Stop TTS
+    if (window.speechSynthesis) {
+      speechSynthesis.cancel();
+    }
+  } catch(e){}
+}
+
+
 function parseHelpTSV(){
   const el = document.getElementById("helpTSV");
   if(!el) return;
@@ -2172,7 +2204,7 @@ let practiceMode = PRACTICE_MODES.ALL;
 
 // NEW: word order mode (per user)
 const ORDER_MODES = { RANDOM: "random", ORDER: "order" };
-let orderMode = ORDER_MODES.RANDOM;
+let orderMode = ORDER_MODES.ORDER;
 
 let currentUser = null;
 let hardSet = new Set();
@@ -2185,6 +2217,17 @@ let revealed = false;
 
 // deck: no repeats until all words in practice set are shown once
 let deck = [];
+
+// Round progress (no-repeats deck)
+let roundTotal = 0;
+
+function updateRoundProgress(){
+  const el = document.getElementById("roundProgress");
+  if(!el) return;
+  if(!roundTotal){ el.textContent = "Round: —"; return; }
+  const shown = Math.max(0, Math.min(roundTotal, roundTotal - deck.length));
+  el.textContent = `Round: ${shown}/${roundTotal}`;
+}
 
 const elUserBadge = document.getElementById("userBadge");
 const elRangePill = document.getElementById("rangePill");
@@ -2243,7 +2286,7 @@ const btnEx  = document.getElementById("btnEx");
 const btnHelpClose = document.getElementById("btnHelpClose");
 
 /** Buttons **/
-document.getElementById("btnSpeak").addEventListener("click", () => { silentActivation(); speakCurrent(); });
+document.getElementById("btnSpeak").addEventListener("click", onListenPressed);
 document.getElementById("btnHelp").addEventListener("click", () => { silentActivation(); openHelp(); });
 document.getElementById("btnShow").addEventListener("click", () => { silentActivation(); revealWordLetterByLetter(); });
 document.getElementById("btnPrev").addEventListener("click", () => { silentActivation(); goPrev(true); });
@@ -2735,7 +2778,7 @@ function syncOrderUI(){
    - orderMode RANDOM uses weighted shuffle (failed words earlier)
    - orderMode ORDER uses natural index order */
 function rebuildDeck(){
-  if(!WORDS.length || !currentUser){ deck = []; return; }
+  if(!WORDS.length || !currentUser){ deck = []; roundTotal = 0; updateRoundProgress(); return; }
 
   // Reset navigation history when the deck is rebuilt
   navBack = [];
@@ -2756,25 +2799,29 @@ function rebuildDeck(){
   // In-order mode: just walk the candidates
   if(orderMode === ORDER_MODES.ORDER){
     deck = candidates.slice();
+    roundTotal = deck.length;
+    updateRoundProgress();
     return;
   }
 
   // Random mode: weighted shuffle (no repeats)
-  const items = [];
-  for(const i of candidates){
-    const word = WORDS[i];
-    const isFailed = hardSet.has(word);
+const items = [];
+for(const i of candidates){
+  const word = WORDS[i];
+  const isFailed = hardSet.has(word);
 
-    let w = 1;
-    if(isFailed) w += FAILED_BONUS_WEIGHT;
+  let w = 1;
+  if(isFailed) w += FAILED_BONUS_WEIGHT;
 
-    const u = Math.random();
-    const key = -Math.log(Math.max(1e-12, u)) / w;
-    items.push({ i, key });
-  }
+  const u = Math.random();
+  const key = -Math.log(Math.max(1e-12, u)) / w;
+  items.push({ i, key });
+}
 
-  items.sort((a,b)=> a.key - b.key);
-  deck = items.map(x => x.i);
+items.sort((a,b)=> a.key - b.key);
+deck = items.map(x => x.i);
+roundTotal = deck.length;
+updateRoundProgress();
 }
 
 function drawNextIndex(){
@@ -2797,14 +2844,16 @@ function pickNewWord(autoSpeak){
   }
 
   if(idx === null){
-    if(practiceMode === PRACTICE_MODES.FAILED){
-      setStatus("No failed words in this band ✅");
-    }else{
-      setStatus("No words");
-    }
+    // No candidates in the current practice set.
+    // Clear currentIndex so nothing can be spoken accidentally.
+    currentIndex = null;
+    try{ stopAllPlayback(); }catch(e){}
+
+    // Do NOT auto-switch modes or show banners here.
     elWordBox.textContent = "• • •";
     elMarkRow.style.display = "none";
     elPrimaryControls.style.display = "flex";
+    updateRoundProgress();
     return;
   }
 
@@ -2815,6 +2864,7 @@ function pickNewWord(autoSpeak){
 
   currentIndex = idx;
   revealed = false;
+  updateRoundProgress();
 
   elMarkRow.style.display = "none";
   elPrimaryControls.style.display = "flex";
@@ -2904,6 +2954,19 @@ function stopWelcomeIntro(){
   }catch(e){}
 }
 
+// Stop any ongoing word playback (best-effort)
+function stopAllPlayback(){
+  try{
+    // Stop HTMLAudio word playback
+    if(mp3El && !mp3El.paused){
+      mp3El.pause();
+      mp3El.currentTime = 0;
+    }
+  }catch(e){}
+  try{
+    if(typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  }catch(e){}
+}
 
 const CSV_URL = "audio/bee_words.csv";
 
@@ -3265,6 +3328,44 @@ function speakCurrent(){
   speakWordPrimaryByIndex(one, w);
 }
 
+function countFailedInBand(){
+  if(!WORDS.length) return 0;
+  const lo = clampInt(band.from - 1, 0, WORDS.length - 1);
+  const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
+  let n = 0;
+  for(let i=lo;i<=hi;i++){
+    if(hardSet.has(WORDS[i])) n++;
+  }
+  return n;
+}
+
+function onListenPressed(){
+  silentActivation();
+
+  // If we're in Failed-only mode but there are no failed words in the current band,
+  // do NOT play anything. Show a banner explaining why it's silent.
+  if(practiceMode === PRACTICE_MODES.FAILED){
+    const nFailed = countFailedInBand();
+    if(nFailed === 0){
+      try{ stopAllPlayback(); }catch(e){}
+      currentIndex = null;
+      showInfoBanner(`        
+        <div class="line2">No failed words in this band.</div>
+        <div class="line3">Change Practice mode to <b>All words</b> in the menu.</div>`);
+      return;
+    }
+  }
+
+  // If no current word is selected, do nothing (avoid speaking a stale word)
+  if(currentIndex === null || typeof currentIndex !== "number"){
+    try{ stopAllPlayback(); }catch(e){}
+    return;
+  }
+
+  speakCurrent();
+}
+
+
 let rewardCtx = null;
 
 function playRewardCelebration(){
@@ -3535,6 +3636,18 @@ function showComboBanner(type){
     return;
   }
 
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  clearTimeout(el._hideT);
+  el._hideT = setTimeout(()=>{ el.classList.remove("show"); }, 1600);
+}
+
+
+function showInfoBanner(htmlMsg){
+  const el = document.getElementById("comboBanner");
+  if(!el) return;
+  el.innerHTML = htmlMsg;
   el.classList.remove("show");
   void el.offsetWidth;
   el.classList.add("show");
@@ -4157,10 +4270,11 @@ function savePracticeMode(user, mode){
 function loadOrderMode(user){
   try{
     const raw = localStorage.getItem(keyOrder(user));
-    if(raw === ORDER_MODES.ORDER) return ORDER_MODES.ORDER;
-    return ORDER_MODES.RANDOM;
+    if(raw === ORDER_MODES.RANDOM) return ORDER_MODES.RANDOM;
+    // Default (first time): In order
+    return ORDER_MODES.ORDER;
   }catch{
-    return ORDER_MODES.RANDOM;
+    return ORDER_MODES.ORDER;
   }
 }
 // NEW
