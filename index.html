@@ -192,16 +192,18 @@
       background: rgba(255, 209, 102, .14);
     }
     .search{
-      width:100%;
-      margin-top:10px;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      color: var(--text);
-      outline:none;
-      font-size:14px;
-    }
+	  width: 100%;
+	  box-sizing: border-box;   /* ← clave */
+	  margin-top: 10px;
+	  padding: 12px 12px;
+	  border-radius: 14px;
+	  border: 1px solid rgba(255,255,255,.12);
+	  background: rgba(0,0,0,.18);
+	  color: var(--text);
+	  outline: none;
+	  font-size: 14px;
+	}
+
     .listBox{
       margin-top:10px;
       padding:12px;
@@ -951,7 +953,7 @@ body.emojiMode .emoji-fly{
 
         <div class="btnRow">
           <button id="btnSwitchUser">👤 Switch user</button>
-          <button id="btnCloseMenu">Close</button>
+          <button id="btnCloseMenu">✖ Close Menu</button>
         </div>
 
         <!-- practice mode -->
