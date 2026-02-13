@@ -874,6 +874,29 @@ body.emojiMode .emoji-fly{
       border: none;
       padding: 4px 6px;
     }
+	
+.adminField{
+  margin-bottom: 16px;
+}
+
+.adminField label{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+  color: var(--muted);
+  font-weight:600;
+}
+
+#adminOverlay .picker{
+  width: min(360px, 92vw);   /* antes 520px aprox */
+  max-width: 360px;
+}
+
+#adminOverlay .picker{
+  border-radius: 18px;
+  padding: 16px;
+}
+
 
   </style>
 </head>
@@ -1044,6 +1067,69 @@ body.emojiMode .emoji-fly{
     </div>
 
   </div>
+
+
+    <!-- Admin modal (replaces iOS-unfriendly prompt()) -->
+    <div class="overlay" id="adminOverlay" aria-hidden="true" style="z-index:95;">
+      <div class="picker" role="dialog" aria-modal="true" aria-label="Admin">
+        <h2 style="margin:0 0 6px;">Admin</h2>
+        <p id="adminHint" style="margin:0 0 12px;">Enter password.</p>
+
+        <div id="adminStepPw">
+          <input id="adminPw" type="password" class="search" placeholder="Password" autocomplete="off" />
+          <div class="btnRow" style="margin-top:12px;">
+            <button id="adminPwCancel">Cancel</button>
+            <button id="adminPwOk">OK</button>
+          </div>
+        </div>
+
+        <div id="adminStepMenu" style="display:none;">
+          <div class="btnRow">
+            <button id="adminReset">Reset ALL to 0</button>
+            <button id="adminCustom">Set custom values</button>
+          </div>
+          <div class="btnRow" style="margin-top:12px;">
+            <button id="adminMenuClose">Close</button>
+          </div>
+        </div>
+
+       <div id="adminStepCustom" style="display:none;">
+
+		  <div class="adminField">
+			<label for="adminCoins">Coins (correct answers)</label>
+			<input id="adminCoins" class="search" inputmode="numeric" />
+		  </div>
+
+		  <div class="adminField">
+			<label for="adminPoops">Poops (wrong answers)</label>
+			<input id="adminPoops" class="search" inputmode="numeric" />
+		  </div>
+
+		  <div class="adminField">
+			<label for="adminLevel">Awards level</label>
+			<input id="adminLevel" class="search" inputmode="numeric" />
+			<div class="small" style="margin-top:6px;">
+			  0=None · 1=Bronze · 2=Silver · 3=Gold · 4=Trophy · 5=Crown · 6=Diamond
+			</div>
+		  </div>
+
+		  <div class="adminField">
+			<label>Clear failed words list?</label>
+			<div class="seg">
+			  <button type="button" id="adminClearNo" class="active">No</button>
+			  <button type="button" id="adminClearYes">Yes</button>
+			</div>
+		  </div>
+
+		  <div class="btnRow" style="margin-top:14px;">
+			<button id="adminCustomCancel">Cancel</button>
+			<button id="adminCustomSave">Save</button>
+		  </div>
+
+		</div>
+
+      </div>
+    </div>
 
 <script id="helpTSV" type="text/plain">
 
@@ -2209,6 +2295,7 @@ const ORDER_MODES = { RANDOM: "random", ORDER: "order" };
 let orderMode = ORDER_MODES.ORDER;
 
 let currentUser = null;
+let adminOpen = false; // prevent iOS audio queue while Admin modal is open
 let hardSet = new Set();
 let band = { from: 1, to: 1 };
 let currentIndex = null;
@@ -2514,52 +2601,120 @@ function clampNonNegInt(v){
   return n;
 }
 
+function openAdminModal(){
+  const ov = document.getElementById("adminOverlay");
+  const hint = document.getElementById("adminHint");
+  const pw = document.getElementById("adminPw");
+
+  // reset UI
+  document.getElementById("adminStepPw").style.display = "block";
+  document.getElementById("adminStepMenu").style.display = "none";
+  document.getElementById("adminStepCustom").style.display = "none";
+  hint.textContent = "Enter password.";
+  pw.value = "";
+
+  ov.classList.add("open");
+  ov.setAttribute("aria-hidden","false");
+  setTimeout(()=>{ try{ pw.focus(); }catch(e){} }, 0);
+}
+
+function closeAdminModal(msg){
+  const ov = document.getElementById("adminOverlay");
+  ov.classList.remove("open");
+  ov.setAttribute("aria-hidden","true");
+
+  adminOpen = false;
+  try{ stopAllPlayback(); }catch(e){}
+  try{ silentActivation(); }catch(e){}
+
+  if(msg) setStatus(msg);
+}
+
+function showAdminStep(step){
+  document.getElementById("adminStepPw").style.display = (step==="pw") ? "block" : "none";
+  document.getElementById("adminStepMenu").style.display = (step==="menu") ? "block" : "none";
+  document.getElementById("adminStepCustom").style.display = (step==="custom") ? "block" : "none";
+}
+
+function inferAwardsLevel(){
+  let lvl = 0;
+  for(let i=0;i<AWARDS.length;i++){
+    if(stats.unlocked && stats.unlocked[AWARDS[i].id]) lvl = i+1;
+  }
+  return lvl;
+}
+
 function adminAwardsWithPassword(){
   if(!currentUser) return;
 
+  // Prevent audio issues on iOS
+  adminOpen = true;
   try{ stopAllPlayback(); }catch(e){}
   try{ silentActivation(); }catch(e){}
 
-  const pw = prompt("Admin password:");
+  openAdminModal();
 
-	if(pw === null){
-	  // iOS: al cancelar un prompt, el audio puede quedar suspendido o en cola
-	  try{ stopAllPlayback(); }catch(e){}
-	  try{ silentActivation(); }catch(e){}
-	  setStatus("Admin: cancelled");
-	  return;
-	}
+  const hint = document.getElementById("adminHint");
 
-	if(pw !== "papa"){
-	  try{ stopAllPlayback(); }catch(e){}
-	  try{ silentActivation(); }catch(e){}
-	  setStatus("Wrong password");
-	  return;
-	}
+  const exitAdmin = (msg)=>{
+    try{ stopAllPlayback(); }catch(e){}
+    try{ silentActivation(); }catch(e){}
+    adminOpen = false;
+    closeAdminModal(msg);
+  };
 
+  // ---------------- PASSWORD STEP ----------------
+  document.getElementById("adminPwCancel").onclick = ()=>{
+    exitAdmin("Admin: cancelled");
+  };
 
-	  const choice = prompt(
-	`ADMIN:
-	1 = Reset ALL to 0
-	2 = Set custom values
-	(Press Cancel to abort)`
-	  );
-  if(choice === null){
-  try{ stopAllPlayback(); }catch(e){}
-  try{ silentActivation(); }catch(e){}
-  setStatus("Admin: cancelled");
-  return;
-}
+  document.getElementById("adminPwOk").onclick = ()=>{
+    const pw = (document.getElementById("adminPw").value || "");
 
+    if(pw !== "papa"){
+      hint.textContent = "Wrong password.";
+      try{ stopAllPlayback(); }catch(e){}
+      try{ silentActivation(); }catch(e){}
+      document.getElementById("adminPw").value = "";
+      try{ document.getElementById("adminPw").focus(); }catch(e){}
+      return;
+    }
 
-  const c = String(choice).trim();
+    // preload custom defaults
+    document.getElementById("adminCoins").value = String(stats.correct || 0);
+    document.getElementById("adminPoops").value = String(stats.wrong || 0);
+    document.getElementById("adminLevel").value = String(inferAwardsLevel());
 
-  if(c === "1"){
-    // Full reset
+    // default clear fails = No
+    const clearNo = document.getElementById("adminClearNo");
+    const clearYes = document.getElementById("adminClearYes");
+    if(clearNo && clearYes){
+      clearNo.classList.add("active");
+      clearYes.classList.remove("active");
+
+      clearNo.onclick = ()=>{
+        clearNo.classList.add("active");
+        clearYes.classList.remove("active");
+      };
+      clearYes.onclick = ()=>{
+        clearYes.classList.add("active");
+        clearNo.classList.remove("active");
+      };
+    }
+
+    hint.textContent = "Choose an action.";
+    showAdminStep("menu");
+  };
+
+  // ---------------- MENU STEP ----------------
+  document.getElementById("adminMenuClose").onclick = ()=>{
+    exitAdmin("Admin: cancelled");
+  };
+
+  document.getElementById("adminReset").onclick = ()=>{
     stats = { correct:0, wrong:0, streak:0, unlocked:{} };
     saveStats(currentUser, stats);
 
-    // Also reset failed words (optional: keep as current behavior)
     hardSet.clear();
     saveHardWords(currentUser, []);
 
@@ -2569,55 +2724,35 @@ function adminAwardsWithPassword(){
 
     renderAwards();
     updatePills();
-    setStatus("Admin: reset done");
-    return;
-  }
+    exitAdmin("Admin: reset done");
+  };
 
-  if(c === "2"){
-    // Set custom values
-    const newCoins = clampNonNegInt(prompt("Set coins (correct answers):", String(stats.correct || 0)));
-    const newPoops = clampNonNegInt(prompt("Set poops (wrong answers):", String(stats.wrong || 0)));
+  document.getElementById("adminCustom").onclick = ()=>{
+    hint.textContent = "Set custom values.";
+    showAdminStep("custom");
+  };
 
-    // Premios: nivel 0..5 (según AWARDS)
+  // ---------------- CUSTOM STEP ----------------
+  document.getElementById("adminCustomCancel").onclick = ()=>{
+    exitAdmin("Admin: cancelled");
+  };
+
+  document.getElementById("adminCustomSave").onclick = ()=>{
+    const newCoins = clampNonNegInt(document.getElementById("adminCoins").value);
+    const newPoops = clampNonNegInt(document.getElementById("adminPoops").value);
+
     const maxLevel = AWARDS.length;
-    const levelDefault = (() => {
-      // intenta inferir nivel actual desde stats.unlocked
-      let lvl = 0;
-      for(let i=0;i<AWARDS.length;i++){
-        if(stats.unlocked && stats.unlocked[AWARDS[i].id]) lvl = i+1;
-      }
-      return lvl;
-    })();
-
-		let newLevel = prompt(
-	`Set awards level:
-	0 = none
-	1 = Bronze
-	2 = Silver
-	3 = Gold
-	4 = Trophy
-	5 = Crown
-	6 = Diamond Bee`,
-	String(levelDefault)
-    );
-	
-    if(newLevel === null){
-	  try{ stopAllPlayback(); }catch(e){}
-	  try{ silentActivation(); }catch(e){}
-	  setStatus("Admin: cancelled");
-	  return;
-	}
-	
-	
-    newLevel = clampNonNegInt(newLevel);
+    let newLevel = clampNonNegInt(document.getElementById("adminLevel").value);
     if(newLevel > maxLevel) newLevel = maxLevel;
 
-    const clearFails = prompt("Clear poops  failed-words list too? (y/n)", "n");
-    const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
+    const doClearFails = !!(
+      document.getElementById("adminClearYes") &&
+      document.getElementById("adminClearYes").classList.contains("active")
+    );
 
     stats.correct = newCoins;
     stats.wrong = newPoops;
-    stats.streak = 0;            // por seguridad: evitar combos raros después de tocar stats
+    stats.streak = 0;
     stats.unlocked = buildUnlockedFromLevel(newLevel);
 
     saveStats(currentUser, stats);
@@ -2633,15 +2768,18 @@ function adminAwardsWithPassword(){
 
     renderAwards();
     updatePills();
-    setStatus(`Admin: set coins ${newCoins} poops ${newPoops} awards:${newLevel}/${maxLevel}`);
-    return;
-  }
 
-  try{ stopAllPlayback(); }catch(e){}
-  try{ silentActivation(); }catch(e){}
-  setStatus("Admin: cancelled");
+    exitAdmin(`Admin: set coins ${newCoins} poops ${newPoops} awards:${newLevel}/${maxLevel}`);
+  };
+
+  // ---------------- CLOSE ON OUTSIDE TAP ----------------
+  // Do NOT close when tapping outside
+	document.getElementById("adminOverlay").onclick = null;
 
 }
+
+
+
 
 function buildUnlockedFromLevel(level){
   // level: 0..AWARDS.length  (0 = ninguno, 1 = bronze, 2 = silver, ...)
@@ -2658,104 +2796,6 @@ function clampNonNegInt(v){
   if(n < 0) n = 0;
   return n;
 }
-
-function adminAwardsWithPassword(){
-  if(!currentUser) return;
-
-  const pw = prompt("Admin password:");
-  if(pw !== "papa"){
-    setStatus("Wrong password");
-    return;
-  }
-
-  const choice = prompt(
-`ADMIN:
-1 = Reset ALL to 0
-2 = Set custom values
-(Press Cancel to abort)`
-  );
-  if(choice === null) return;
-
-  const c = String(choice).trim();
-
-  if(c === "1"){
-    // Full reset
-    stats = { correct:0, wrong:0, streak:0, unlocked:{} };
-    saveStats(currentUser, stats);
-
-    // Also reset failed words (optional: keep as current behavior)
-    hardSet.clear();
-    saveHardWords(currentUser, []);
-
-    lastCombo5At = 0;
-    lastCombo10At = 0;
-    lastCombo20At = 0;
-
-    renderAwards();
-    updatePills();
-    setStatus("Admin: reset done");
-    return;
-  }
-
-  if(c === "2"){
-    // Set custom values
-    const newCoins = clampNonNegInt(prompt("Set coins (correct answers):", String(stats.correct || 0)));
-    const newPoops = clampNonNegInt(prompt("Set poops (wrong answers):", String(stats.wrong || 0)));
-
-    // Premios: nivel 0..5 (según AWARDS)
-    const maxLevel = AWARDS.length;
-    const levelDefault = (() => {
-      // intenta inferir nivel actual desde stats.unlocked
-      let lvl = 0;
-      for(let i=0;i<AWARDS.length;i++){
-        if(stats.unlocked && stats.unlocked[AWARDS[i].id]) lvl = i+1;
-      }
-      return lvl;
-    })();
-
-    let newLevel = prompt(
-`Set awards level:
-0 = none
-1 = Bronze
-2 = Silver
-3 = Gold
-4 = Trophy
-5 = Crown
-6 = Diamond Bee`,
-String(levelDefault)
-    );
-    if(newLevel === null) return;
-    newLevel = clampNonNegInt(newLevel);
-    if(newLevel > maxLevel) newLevel = maxLevel;
-
-    const clearFails = prompt("Clear poops  failed-words list too? (y/n)", "n");
-    const doClearFails = (String(clearFails || "").trim().toLowerCase().startsWith("y"));
-
-    stats.correct = newCoins;
-    stats.wrong = newPoops;
-    stats.streak = 0;            // por seguridad: evitar combos raros después de tocar stats
-    stats.unlocked = buildUnlockedFromLevel(newLevel);
-
-    saveStats(currentUser, stats);
-
-    if(doClearFails){
-      hardSet.clear();
-      saveHardWords(currentUser, []);
-    }
-
-    lastCombo5At = 0;
-    lastCombo10At = 0;
-    lastCombo20At = 0;
-
-    renderAwards();
-    updatePills();
-    setStatus(`Admin: set coins ${newCoins} poops ${newPoops} awards:${newLevel}/${maxLevel}`);
-    return;
-  }
-
-  setStatus("Admin: cancelled");
-}
-
 
 function setPracticeMode(mode){
   if(!currentUser) return;
@@ -3314,6 +3354,7 @@ function mp3PlayByIndex(index){
 
 // Main entry: try MP3 timestamps first, else TTS
 async function speakWordPrimary(wordText){
+  if(adminOpen) return;
   const w = (wordText || "").trim();
   if(!w) return;
 
@@ -3353,6 +3394,7 @@ async function speakWordPrimaryByIndex(oneBasedIndex, wordText){
 }
 
 function speakCurrent(){
+  if(adminOpen) return;
   // If welcome intro is playing, stop it before playing the word
   stopWelcomeIntro();
   const w = currentWord();
