@@ -2515,19 +2515,40 @@ function clampNonNegInt(v){
 function adminAwardsWithPassword(){
   if(!currentUser) return;
 
-  const pw = prompt("Admin password:");
-  if(pw !== "papa"){
-    setStatus("Wrong password");
-    return;
-  }
+  try{ stopAllPlayback(); }catch(e){}
+  try{ silentActivation(); }catch(e){}
 
-  const choice = prompt(
-`ADMIN:
-1 = Reset ALL to 0
-2 = Set custom values
-(Press Cancel to abort)`
-  );
-  if(choice === null) return;
+  const pw = prompt("Admin password:");
+
+	if(pw === null){
+	  // iOS: al cancelar un prompt, el audio puede quedar suspendido o en cola
+	  try{ stopAllPlayback(); }catch(e){}
+	  try{ silentActivation(); }catch(e){}
+	  setStatus("Admin: cancelled");
+	  return;
+	}
+
+	if(pw !== "papa"){
+	  try{ stopAllPlayback(); }catch(e){}
+	  try{ silentActivation(); }catch(e){}
+	  setStatus("Wrong password");
+	  return;
+	}
+
+
+	  const choice = prompt(
+	`ADMIN:
+	1 = Reset ALL to 0
+	2 = Set custom values
+	(Press Cancel to abort)`
+	  );
+  if(choice === null){
+  try{ stopAllPlayback(); }catch(e){}
+  try{ silentActivation(); }catch(e){}
+  setStatus("Admin: cancelled");
+  return;
+}
+
 
   const c = String(choice).trim();
 
@@ -2566,18 +2587,26 @@ function adminAwardsWithPassword(){
       return lvl;
     })();
 
-    let newLevel = prompt(
-`Set awards level:
-0 = none
-1 = Bronze
-2 = Silver
-3 = Gold
-4 = Trophy
-5 = Crown
-6 = Diamond Bee`,
-String(levelDefault)
+		let newLevel = prompt(
+	`Set awards level:
+	0 = none
+	1 = Bronze
+	2 = Silver
+	3 = Gold
+	4 = Trophy
+	5 = Crown
+	6 = Diamond Bee`,
+	String(levelDefault)
     );
-    if(newLevel === null) return;
+	
+    if(newLevel === null){
+	  try{ stopAllPlayback(); }catch(e){}
+	  try{ silentActivation(); }catch(e){}
+	  setStatus("Admin: cancelled");
+	  return;
+	}
+	
+	
     newLevel = clampNonNegInt(newLevel);
     if(newLevel > maxLevel) newLevel = maxLevel;
 
@@ -2606,7 +2635,10 @@ String(levelDefault)
     return;
   }
 
+  try{ stopAllPlayback(); }catch(e){}
+  try{ silentActivation(); }catch(e){}
   setStatus("Admin: cancelled");
+
 }
 
 function buildUnlockedFromLevel(level){
