@@ -887,16 +887,22 @@ body.emojiMode .emoji-fly{
   font-weight:600;
 }
 
-#adminOverlay .picker{
-  width: min(360px, 92vw);   /* antes 520px aprox */
-  max-width: 360px;
-}
 
 #adminOverlay .picker{
   border-radius: 18px;
   padding: 16px;
 }
 
+#adminOverlay .picker{
+  width: 88vw;          /* ocupa 88% del ancho de pantalla */
+  max-width: 340px;     /* nunca más ancho que 340px */
+  margin: 0 auto;
+}
+
+#adminOverlay input{
+  width: 100%;
+  box-sizing: border-box;
+}
 
   </style>
 </head>
