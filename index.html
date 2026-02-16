@@ -2310,6 +2310,47 @@ let navForward = [];  // stack for forward navigation after going back
 
 let revealed = false;
 
+// --- Anti double-tap locks (Listen + Mark) ---
+let markLocked = false;
+let listenLocked = false;
+let listenUnlockTimer = null;
+
+function setMarkButtonsEnabled(enabled){
+  const up = document.getElementById("btnUp");
+  const dn = document.getElementById("btnDown");
+  if(up) up.disabled = !enabled;
+  if(dn) dn.disabled = !enabled;
+}
+function setListenEnabled(enabled){
+  const b = document.getElementById("btnSpeak");
+  if(b) b.disabled = !enabled;
+}
+function lockListenFor(ms){
+  listenLocked = true;
+  setListenEnabled(false);
+  if(listenUnlockTimer) clearTimeout(listenUnlockTimer);
+  listenUnlockTimer = setTimeout(()=>{
+    listenLocked = false;
+    setListenEnabled(true);
+  }, Math.max(120, ms|0));
+}
+function lockListenUntilDone(failsafeMs=12000){
+  listenLocked = true;
+  setListenEnabled(false);
+  if(listenUnlockTimer) clearTimeout(listenUnlockTimer);
+  listenUnlockTimer = setTimeout(()=>{
+    listenLocked = false;
+    setListenEnabled(true);
+  }, Math.max(800, failsafeMs|0));
+}
+function unlockListen(){
+  listenLocked = false;
+  setListenEnabled(true);
+  if(listenUnlockTimer) clearTimeout(listenUnlockTimer);
+  listenUnlockTimer = null;
+}
+
+
 // deck: no repeats until all words in practice set are shown once
 let deck = [];
 
@@ -3213,7 +3254,26 @@ async function mp3EnsureReady(){
       mp3Ctx = new (window.AudioContext || window.webkitAudioContext)();
       mp3Gain = mp3Ctx.createGain();
       mp3Gain.connect(mp3Ctx.destination);
-    }
+    
+      // iOS Safari: make sure context is fully resumed and output is "warmed up"
+      try{
+        mp3Gain.gain.value = 1;
+      }catch(e){}
+      try{
+        if(mp3Ctx.state === "suspended"){
+          await mp3Ctx.resume();
+        }
+      }catch(e){}
+      // Tiny silent blip to avoid first-play low volume on some iOS versions
+      try{
+        const o2 = mp3Ctx.createOscillator();
+        const g2 = mp3Ctx.createGain();
+        g2.gain.value = 0.00001;
+        o2.connect(g2); g2.connect(mp3Ctx.destination);
+        o2.start();
+        o2.stop(mp3Ctx.currentTime + 0.03);
+      }catch(e){}
+}
 
     // 2) Audio element (used for iOS unlock + HTMLAudio backend)
     if (!mp3El){
@@ -3319,6 +3379,7 @@ function mp3PlayByIndex(index){
 
   const { start, end } = mp3Timestamps[index];
   const duration = Math.max(0, end - start);
+  const durationMs = Math.max(120, duration * 1000 + 80);
 
   // Backend A: WebAudio (decoded buffer)
   if (mp3Backend === "webaudio"){
@@ -3328,7 +3389,7 @@ function mp3PlayByIndex(index){
       src.buffer = mp3Buffer;
       src.connect(mp3Gain);
       src.start(0, start, duration);
-      return true;
+      return durationMs;
     }catch(e){
       return false;
     }
@@ -3342,12 +3403,15 @@ function mp3PlayByIndex(index){
         mp3HtmlStopTimer = null;
       }
       mp3El.pause();
+      // Ensure full volume from the first play on iOS
+      mp3El.muted = false;
+      mp3El.volume = 1;
       mp3El.currentTime = Math.max(0, start + 0.01); // tiny nudge avoids sticking
       mp3El.play().catch(()=>{});
-      mp3HtmlStopTimer = setTimeout(()=>{
+mp3HtmlStopTimer = setTimeout(()=>{
         try{ mp3El.pause(); }catch(e){}
       }, Math.max(20, duration * 1000 + 30));
-      return true;
+      return durationMs;
     }catch(e){
       return false;
     }
@@ -3372,8 +3436,12 @@ async function speakWordPrimary(wordText){
   if(one !== null){
     try{
       const ok = await mp3EnsureReady();
-      if(ok && mp3PlayByIndex(one)){
-        return;
+      if(ok){
+        const durMs = mp3PlayByIndex(one);
+        if(durMs){
+          lockListenFor(durMs);
+          return;
+        }
       }
     }catch(e){
       // fall through to TTS
@@ -3382,7 +3450,8 @@ async function speakWordPrimary(wordText){
 
   // Fallback: keep your existing voice system
   silentActivation();
-  speakText(w);
+  lockListenUntilDone(12000);
+  speakText(w, unlockListen);
 }
 
 // Prefer MP3 by 1-based word index (no string lookup). Falls back to TTS.
@@ -3392,12 +3461,20 @@ async function speakWordPrimaryByIndex(oneBasedIndex, wordText){
   if(oneBasedIndex == null) return speakWordPrimary(w);
   try{
     const ok = await mp3EnsureReady();
-    if(ok && mp3PlayByIndex(oneBasedIndex)) return;
+    if(ok){
+      const durMs = mp3PlayByIndex(oneBasedIndex);
+      if(durMs){
+        lockListenFor(durMs);
+        return;
+      }
+    }
   }catch(e){}
   // fallback
   silentActivation();
-  speakText(w);
+  lockListenUntilDone(12000);
+  speakText(w, unlockListen);
 }
+
 
 function speakCurrent(){
   if(adminOpen) return;
@@ -3422,6 +3499,7 @@ function countFailedInBand(){
 }
 
 function onListenPressed(){
+  if(listenLocked) return;
   silentActivation();
 
   // If we're in Failed-only mode but there are no failed words in the current band,
@@ -3978,6 +4056,11 @@ function fxResize(){
   fxCtx.setTransform(dpr,0,0,dpr,0,0);
 }
 window.addEventListener("resize", fxResize, {passive:true});
+// iOS sometimes lags resize on rotation; ensure canvas matches after orientation changes
+window.addEventListener("orientationchange", ()=>{ setTimeout(fxResize, 80); }, {passive:true});
+if(window.visualViewport){
+  visualViewport.addEventListener("resize", ()=>{ setTimeout(fxResize, 0); }, {passive:true});
+}
 fxResize();
 
 function prefersReducedMotion(){
@@ -4010,7 +4093,12 @@ function disintegrateWordParticles(el){
   const text = (el.textContent || "").trim();
   if(!text || text === "• • •") return;
 
-  const r = el.getBoundingClientRect();
+  // Ensure canvas + layout are up to date (rotation can leave stale viewport metrics on iOS)
+  try{ fxResize(); }catch(e){}
+
+  // Read element position *right before* launching the effect
+  requestAnimationFrame(()=>{
+    const r = el.getBoundingClientRect();
   // Prepare offscreen canvas for sampling
   const off = document.createElement("canvas");
   const offCtx = off.getContext("2d");
@@ -4113,6 +4201,7 @@ function disintegrateWordParticles(el){
     }
   }
   requestAnimationFrame(frame);
+  });
 }
 
 
@@ -4130,8 +4219,12 @@ function playWrongWordFX(){
 
 function markWord(gotIt){
   if(!revealed) return;
+  if(markLocked) return;
   const w = currentWord();
   if(!w || !currentUser) return;
+
+  markLocked = true;
+  setMarkButtonsEnabled(false);
 
   if(gotIt){
     // Success feedback
@@ -4226,6 +4319,9 @@ flyCoinCombo(visualCoins, intervalMs);
     elPrimaryControls.style.display = "flex";
     elWordBox.textContent = "• • •";
     pickNewWord(false);
+
+    markLocked = false;
+    setMarkButtonsEnabled(true);
   }, 360);
 }
 
