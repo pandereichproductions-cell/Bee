@@ -1843,6 +1843,32 @@ function silentActivation(){
       o.stop(coinCtx.currentTime + 0.02);
     }
   }catch(e){}
+
+
+  // Unlock MP3 WebAudio path early on iOS (prevents first-play low volume)
+  try{
+    const AudioCtx2 = window.AudioContext || window.webkitAudioContext;
+    if(AudioCtx2){
+      if(!mp3Ctx) mp3Ctx = new AudioCtx2();
+      if(mp3Ctx.state === "suspended") mp3Ctx.resume().catch(()=>{});
+      if(!mp3Gain){
+        mp3Gain = mp3Ctx.createGain();
+        mp3Gain.gain.value = 1;
+        mp3Gain.connect(mp3Ctx.destination);
+      }else{
+        try{ mp3Gain.gain.value = 1; }catch(e){}
+      }
+      // Tiny silent blip to fully unlock output routing
+      const o2 = mp3Ctx.createOscillator();
+      const g2 = mp3Ctx.createGain();
+      g2.gain.value = 0.00001;
+      o2.connect(g2);
+      g2.connect(mp3Gain);
+      o2.start();
+      o2.stop(mp3Ctx.currentTime + 0.02);
+    }
+  }catch(e){}
+
 }
 
 
@@ -2493,6 +2519,12 @@ function closeUserPicker(){ userOverlay.classList.remove("open"); }
 function selectUser(userKey){
   if(!USERS[userKey]) return;
   currentUser = userKey;
+
+
+  // iOS: wake audio on the same gesture used to select the user
+  try{ silentActivation(); }catch(e){}
+  // Start MP3 loading early (non-blocking)
+  try{ mp3EnsureReady().catch(()=>{}); }catch(e){}
 
   
 
