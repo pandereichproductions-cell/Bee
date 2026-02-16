@@ -3753,8 +3753,10 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = (parseFloat(get
 		// Duración universal por distancia (ms):
 		// - mínimo para trayectos cortos (que no “teletransporte”)
 		// - máximo para que no se haga eterna
-		let dur = 620 + dist * 2.6;   // base + factor (ajustable)
-		dur = Math.max(900, Math.min(dur, 1700));
+		const SPEED = 1.4;
+		let dur = (520 + dist * 2.8) * SPEED;
+		dur = Math.max(1100, Math.min(dur, 1900));
+
 		
         const lift = Math.min(190, Math.max(90, dist * 0.35));
         const cx = x0 + dx * 0.5;
