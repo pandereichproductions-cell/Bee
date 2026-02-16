@@ -3730,74 +3730,89 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = (parseFloat(get
     coin.className = "coinFly";
     coin.innerHTML = iconCoinHTML("flyIconImg");
 
-    // centrar el emoji (usa el tamaño inicial)
+    // Start exactly at origin (fixed coords)
     const half = startSizePx / 2;
     coin.style.left = (x0 - half) + "px";
     coin.style.top  = (y0 - half) + "px";
     coin.style.width = startSizePx + "px";
     coin.style.height = startSizePx + "px";
     coin.style.fontSize = startSizePx + "px";
+    coin.style.opacity = "1";
+    coin.style.transform = "translate3d(0,0,0) scale(1)";
 
     document.body.appendChild(coin);
 
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
-    const cx = x0 + dx * 0.5;
-    const cy = Math.min(y0, y1) - lift;
+    // Force layout so iOS actually paints the first frame at the origin
+    coin.getBoundingClientRect();
 
-    // escala final = tamaño del icono destino / tamaño inicial
-    const endScale = Math.max(0.2, endSizePx / startSizePx);
+    const startAnim = ()=>{
+      try{
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
+        const cx = x0 + dx * 0.5;
+        const cy = Math.min(y0, y1) - lift;
 
-    const anim = coin.animate([
-      { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
-      { transform: `translate(${(cx-x0)}px, ${(cy-y0)}px) scale(1.18)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${(x1-x0)}px, ${(y1-y0)}px) scale(${endScale})`, opacity: 0.0, offset: 1 }
-    ], {
-      duration: 1400,
-      easing: "cubic-bezier(.15,.9,.25,1)"
-    });
+        // final scale = destination icon size / initial size
+        const endScale = Math.max(0.2, endSizePx / startSizePx);
 
-    anim.onfinish = () => coin.remove();
+        const anim = coin.animate([
+          { transform: "translate3d(0,0,0) scale(1)", opacity: 1, offset: 0 },
+          { transform: `translate3d(${(cx-x0)}px, ${(cy-y0)}px, 0) scale(1.18)`, opacity: 1, offset: 0.55 },
+          { transform: `translate3d(${(x1-x0)}px, ${(y1-y0)}px, 0) scale(${endScale})`, opacity: 0.0, offset: 1 }
+        ], {
+          duration: 1400,
+          easing: "cubic-bezier(.15,.9,.25,1)"
+        });
+
+        anim.onfinish = () => coin.remove();
+      }catch(e){
+        try{ coin.remove(); }catch(_){}
+      }
+    };
+
+    // Two frames: avoids "teleport" on iPhone (first frames can be dropped)
+    requestAnimationFrame(()=> requestAnimationFrame(startAnim));
   }catch(e){}
 }
 
 
+
 function flyCoinCombo(n, intervalMs){
-  const fromEl = document.getElementById("wordBox") || document.getElementById("btnUp");
-  const toPill = document.getElementById("goodPill");
-  const toEl = toPill ? (toPill.querySelector("img") || toPill.querySelector(".emoji-pill") || toPill.querySelector(".emojiIcon") || toPill.querySelector(".statIcon") || toPill) : null;
-
   const count = Math.max(1, n|0);
-  const step = Math.max(0, intervalMs|0);
-
-  if(!fromEl || !toEl){
-    for(let i=0;i<count;i++) setTimeout(()=>playCoin(), i*step);
-    return;
-  }
-
-  const a = fromEl.getBoundingClientRect();
-  const b = toEl.getBoundingClientRect();
-
-  const vv = window.visualViewport;
-  const ox = vv ? (vv.offsetLeft || 0) : 0;
-  const oy = vv ? (vv.offsetTop  || 0) : 0;
-
-  const x0 = a.left + a.width * 0.50 + ox;
-  const y0 = a.top  + a.height * 0.35 + oy;
-
-  const x1 = b.left + b.width  * 0.50 + ox;
-  const y1 = b.top  + b.height * 0.50 + oy;
-
-  const endSize = getIconSizePx(toPill || toEl, 52);
+  const step  = Math.max(0, intervalMs|0);
 
   for(let i=0;i<count;i++){
     setTimeout(()=>{
       playCoin();
-      flyCoinXY(x0, y0, x1, y1, 48, endSize);
+
+      // Read geometry RIGHT before launching each coin (iPhone: avoid stale rects / dropped first frames)
+      requestAnimationFrame(()=>{
+        const fromEl = document.getElementById("wordBox") || document.getElementById("btnUp");
+        const toPill = document.getElementById("goodPill");
+        const toEl = toPill ? (toPill.querySelector("img") || toPill.querySelector(".emoji-pill") || toPill.querySelector(".emojiIcon") || toPill.querySelector(".statIcon") || toPill) : null;
+
+        if(!fromEl || !toEl) return;
+
+        const a = fromEl.getBoundingClientRect();
+        const b = toEl.getBoundingClientRect();
+
+        const vv = window.visualViewport;
+        const ox = vv ? (vv.offsetLeft || 0) : 0;
+        const oy = vv ? (vv.offsetTop  || 0) : 0;
+
+        const x0 = a.left + a.width  * 0.50 + ox;
+        const y0 = a.top  + a.height * 0.50 + oy; // center of the word
+        const x1 = b.left + b.width  * 0.50 + ox;
+        const y1 = b.top  + b.height * 0.50 + oy;
+
+        const endSize = getIconSizePx(toPill || toEl, 52);
+        flyCoinXY(x0, y0, x1, y1, 48, endSize);
+      });
     }, i*step);
   }
 }
+
 
 
 function showComboBanner(type){
