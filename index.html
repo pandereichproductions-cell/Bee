@@ -3749,7 +3749,14 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = (parseFloat(get
       try{
         const dx = x1 - x0;
         const dy = y1 - y0;
-        const lift = Math.min(190, Math.max(90, Math.hypot(dx, dy) * 0.35));
+		const dist = Math.hypot(dx, dy);
+		// Duración universal por distancia (ms):
+		// - mínimo para trayectos cortos (que no “teletransporte”)
+		// - máximo para que no se haga eterna
+		let dur = 620 + dist * 2.6;   // base + factor (ajustable)
+		dur = Math.max(900, Math.min(dur, 1700));
+		
+        const lift = Math.min(190, Math.max(90, dist * 0.35));
         const cx = x0 + dx * 0.5;
         const cy = Math.min(y0, y1) - lift;
 
@@ -3760,10 +3767,11 @@ function flyCoinXY(x0, y0, x1, y1, startSizePx = 48, endSizePx = (parseFloat(get
           { transform: "translate3d(0,0,0) scale(1)", opacity: 1, offset: 0 },
           { transform: `translate3d(${(cx-x0)}px, ${(cy-y0)}px, 0) scale(1.18)`, opacity: 1, offset: 0.55 },
           { transform: `translate3d(${(x1-x0)}px, ${(y1-y0)}px, 0) scale(${endScale})`, opacity: 0.0, offset: 1 }
-        ], {
-          duration: 1400,
-          easing: "cubic-bezier(.15,.9,.25,1)"
-        });
+		], {
+		  duration: dur,
+		  easing: "cubic-bezier(.22,1,.36,1)" // universal y muy estable
+		});
+
 
         anim.onfinish = () => coin.remove();
       }catch(e){
