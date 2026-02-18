@@ -1113,6 +1113,17 @@ body.emojiMode .emoji-fly{
       top: 0 !important;
       transform: none !important;
     }
+/* === iOS Safari: prevent auto-zoom inside Admin modal === */
+#adminOverlay input,
+#adminOverlay .search,
+#adminOverlay .adminNum,
+#adminOverlay select{
+  font-size: 16px !important;
+  line-height: 1.2;
+}
+#adminOverlay input[type="password"]{
+  padding: 10px 12px;
+}
 </style>
 </head>
 
@@ -2969,9 +2980,18 @@ function openAdminModal(){
   ov.classList.add("open");
   ov.setAttribute("aria-hidden","false");
   setTimeout(()=>{ try{ pw.focus(); }catch(e){} }, 0);
+}function blurAdminPassword(){
+  const el = document.getElementById("adminPw");
+  if(el) el.blur();
+  // iOS repaint nudge (fix stuck zoom after keyboard)
+  try{
+    window.scrollTo(window.scrollX, window.scrollY + 1);
+    window.scrollTo(window.scrollX, window.scrollY - 1);
+  }catch(e){}
 }
 
 function closeAdminModal(msg){
+  blurAdminPassword();
   const ov = document.getElementById("adminOverlay");
   ov.classList.remove("open");
   ov.setAttribute("aria-hidden","true");
@@ -3080,6 +3100,7 @@ const setupAdminCustomUI = ()=>{
   };
 
   document.getElementById("adminPwOk").onclick = ()=>{
+    blurAdminPassword();
     const pw = (document.getElementById("adminPw").value || "");
 
     if(pw !== "papa"){
