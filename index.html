@@ -2609,6 +2609,10 @@ let markLocked = false;
 let listenLocked = false;
 let listenUnlockTimer = null;
 
+// --- Bonus coin tick UI override (prevents pill rebuild from breaking per-coin updates) ---
+let coinTickActive = false;
+let coinTickShown = 0;
+
 function setMarkButtonsEnabled(enabled){
   const up = document.getElementById("btnUp");
   const dn = document.getElementById("btnDown");
@@ -4639,6 +4643,7 @@ if(hardSet.has(w)){
   stats.wrong   = Number(stats.wrong) || 0;
   stats.streak  = Number(stats.streak) || 0;
 
+  let deferFinalize = false;
   if(gotIt){
     stats.streak++;
 // Coin rewards (exclusive tiers, never stack):
@@ -4680,11 +4685,47 @@ if(stats.streak % 40 === 0 && stats.streak !== lastCombo40At){
 
 flyCoinCombo(visualCoins, intervalMs);
 
+    // Coins: increment counter in sync with coin LAUNCH rhythm (light UI update)
+    const setGoodCoinsFast = (v)=>{
+      coinTickShown = v;
+      const el = document.querySelector("#goodPill .pillCount");
+      if(el) el.textContent = String(Math.max(0, v|0));
+    };
+
+    if(awardCoins <= 1 || intervalMs <= 0){
+      stats.correct += 1;
+      coinTickActive = false;
+      setGoodCoinsFast(stats.correct);
+    }else{
+      // During bonus, avoid pill rebuilds jumping the number
+      coinTickActive = true;
+      coinTickShown = stats.correct;
+      // First coin now
+      stats.correct += 1;
+      setGoodCoinsFast(stats.correct);
+      popGoodPill();
+      // Remaining coins aligned with launch spacing
+      for(let i=1;i<awardCoins;i++){
+        setTimeout(()=>{
+          stats.correct += 1;
+          setGoodCoinsFast(stats.correct);
+          popGoodPill();
+        }, i*intervalMs);
+      }
+      deferFinalize = true;
+      const finalizeAt = (awardCoins-1)*intervalMs + 50;
+      setTimeout(()=>{
+        coinTickActive = false;
+        saveStats(currentUser, stats);
+        renderAwards();
+        checkAwardsAndCelebrate();
+        updatePills();
+      }, finalizeAt);
+    }
+
+
     // Word disintegration effect
     try{ disintegrateWordParticles(elWordBox); }catch(e){}
-
-    // Add coins to the counter
-    stats.correct += awardCoins;
 }else{
     stats.wrong++;
     stats.streak = 0;
@@ -4693,12 +4734,13 @@ flyCoinCombo(visualCoins, intervalMs);
     lastCombo20At = 0;
     lastCombo40At = 0;
   }
-  saveStats(currentUser, stats);
-  renderAwards();
-  checkAwardsAndCelebrate();
-
-  updatePills();
-  setStatus("Ready");
+  if(!deferFinalize){
+    saveStats(currentUser, stats);
+    renderAwards();
+    checkAwardsAndCelebrate();
+    updatePills();
+  }
+setStatus("Ready");
 
   setTimeout(()=>{
     revealed = false;
@@ -4767,7 +4809,7 @@ function renderList(){
 function updatePills(){
   if(!currentUser){
     elRangePill.textContent = `Range: —`;
-    elHardPill.innerHTML = `${iconPooHTML("statIconImg")}<div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
+    elHardPill.innerHTML = `${iconPooHTML("statIconImg")} <span class="pillCount">${hardSet ? hardSet.size : 0}</span>`;
     return;
   }
   elRangePill.textContent = `${band.from}–${band.to}`;
@@ -4776,10 +4818,13 @@ function updatePills(){
   const hi = clampInt(band.to - 1, lo, WORDS.length - 1);
   let failedInBand = 0;
   for(let i=lo;i<=hi;i++) if(hardSet.has(WORDS[i])) failedInBand++;
-  elHardPill.innerHTML = `${iconPooHTML("statIconImg")}<div class="statNum">${hardSet ? hardSet.size : 0}</div>`;
+  elHardPill.innerHTML = `${iconPooHTML("statIconImg")} <span class="pillCount">${hardSet ? hardSet.size : 0}</span>`;
   rangeLabel.textContent = `${band.from}–${band.to}`;
   // correct counter
-  if(elGoodPill){ elGoodPill.innerHTML = `${iconCoinHTML("statIconImg")}<div class="statNum">${(stats && stats.correct) ? stats.correct : 0}</div>`; }
+  if(elGoodPill){
+    const shown = coinTickActive ? coinTickShown : ((stats && stats.correct) ? stats.correct : 0);
+    elGoodPill.innerHTML = `${iconCoinHTML("statIconImg")} <span class="pillCount">${shown}</span>`;
+  }
 }
 
 /* Storage keys (per user) */
