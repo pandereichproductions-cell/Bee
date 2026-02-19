@@ -1423,13 +1423,19 @@ button, .helpBtn, .nextBtn, .userBtn{
       </div>
     </div>
 
+
+<script>
+	// --- Hoisted globals (avoid TDZ before init/click handlers) ---
+	var mp3Timestamps = window.mp3Timestamps || [];
+	var lastCombo5At = 0;
+	var lastCombo10At = 0;
+	var lastCombo20At = 0;
+	var lastCombo40At = 0;
+	var lastCombo80At = 0;
+</script>
+
 <script id="helpTSV" type="text/plain">
 
-// --- Hoisted globals (avoid TDZ before init/click handlers) ---
-var mp3Timestamps = window.mp3Timestamps || [];
-var lastCombo5At = 0;
-var lastCombo10At = 0;
-var lastCombo20At = 0;
 // --------------------------------------------------------------
 Word	Definition	Sentence
  abdomen	the part of the body that contains the stomach and intestines	The doctor pressed gently on the patient's abdomen.
@@ -2833,6 +2839,7 @@ hardSet = new Set(loadHardWords(userKey));
   lastCombo10At = 0;
   lastCombo20At = 0;
   lastCombo40At = 0;
+  lastCombo80At = 0;
   saveStats(currentUser, stats);
 renderAwards();
 
@@ -4209,6 +4216,8 @@ function showComboBanner(type){
   const el = document.getElementById("comboBanner");
   if(!el) return;
 
+  let duration = 1600; // default
+  
   if(type === 5){
     el.innerHTML = `
       <div class="line1">Great job!</div>
@@ -4219,16 +4228,25 @@ function showComboBanner(type){
       <div class="line1">Amazing! ⭐</div>
       <div class="line2">10 in a row!</div>
       <div class="line3">+5 Coins Bonus</div>`;
+	   duration = 2000;
   } else if(type === 20){
     el.innerHTML = `
       <div class="line1">Unstoppable! 🚀</div>
       <div class="line2">20 in a row!</div>
       <div class="line3">+10 Coins Bonus</div>`;
+	  duration = 2200;
   } else if(type === 40){
     el.innerHTML = `
       <div class="line1">LEGENDARY! ✨</div>
       <div class="line2">40 in a row!</div>
       <div class="line3">+30 Coins Bonus</div>`;
+	  duration = 2600;
+ } else if(type === 80){
+	el.innerHTML = `
+    <div class="line1">ULTRA LEGENDARY! 🐝💥</div>
+    <div class="line2">80 in a row!</div>
+    <div class="line3">+100 Coins Bonus</div>`;
+	duration = 4000;
   } else {
     return;
   }
@@ -4237,7 +4255,7 @@ function showComboBanner(type){
   void el.offsetWidth;
   el.classList.add("show");
   clearTimeout(el._hideT);
-  el._hideT = setTimeout(()=>{ el.classList.remove("show"); }, 1600);
+  el._hideT = setTimeout(()=>{ el.classList.remove("show"); }, duration);
 }
 
 
@@ -4703,24 +4721,36 @@ let visualCoins = 1;    // how many flying coins we show (capped for performance
 let intervalMs = 0;
 
 // Highest priority first
-if(stats.streak % 40 === 0 && stats.streak !== lastCombo40At){
+if(stats.streak % 80 === 0 && stats.streak !== lastCombo80At){
+  awardCoins = 100;
+  //visualCoins = Math.min(30, awardCoins); // mantiene el cap visual (recomendado)
+  visualCoins = awardCoins;
+  intervalMs = 130;                       
+  lastCombo80At = stats.streak;
+  showComboBanner(80);
+
+} else if(stats.streak % 40 === 0 && stats.streak !== lastCombo40At){
   awardCoins = 30;
-  visualCoins = Math.min(30, awardCoins);
+  //visualCoins = Math.min(30, awardCoins);
+  visualCoins = awardCoins;
   intervalMs = 130;
   lastCombo40At = stats.streak;
   showComboBanner(40);
+
 } else if(stats.streak % 20 === 0 && stats.streak !== lastCombo20At){
   awardCoins = 10;
   visualCoins = awardCoins;
   intervalMs = 140;
   lastCombo20At = stats.streak;
   showComboBanner(20);
+
 } else if(stats.streak % 10 === 0 && stats.streak !== lastCombo10At){
   awardCoins = 5;
   visualCoins = awardCoins;
   intervalMs = 160;
   lastCombo10At = stats.streak;
   showComboBanner(10);
+
 } else if(stats.streak % 5 === 0 && stats.streak !== lastCombo5At){
   awardCoins = 3;
   visualCoins = awardCoins;
@@ -4728,6 +4758,7 @@ if(stats.streak % 40 === 0 && stats.streak !== lastCombo40At){
   lastCombo5At = stats.streak;
   showComboBanner(5);
 }
+
 
 flyCoinCombo(visualCoins, intervalMs);
 
@@ -4779,6 +4810,7 @@ flyCoinCombo(visualCoins, intervalMs);
     lastCombo10At = 0;
     lastCombo20At = 0;
     lastCombo40At = 0;
+	lastCombo80At = 0;
   }
   if(!deferFinalize){
     saveStats(currentUser, stats);
